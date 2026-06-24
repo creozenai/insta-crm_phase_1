@@ -13,6 +13,7 @@ router.get('/', async (req, res) => {
     if (req.query.status) query.status = { $in: req.query.status.split(',') };
     if (req.query.priority) query.priority = { $in: req.query.priority.split(',') };
     if (req.query.type) query.type = { $in: req.query.type.split(',') };
+    if (req.query.leadId) query.leadId = req.query.leadId;
     
     if (req.query.assignees && req.user.role === 'admin') {
       const assignees = req.query.assignees.split(',').map(a => a === 'me' ? req.user._id : a);

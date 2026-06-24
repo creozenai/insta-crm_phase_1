@@ -251,7 +251,7 @@ function MainApp() {
         <Route
           path="rules"
           element={
-            <CRMProtectedRoute>
+            <CRMProtectedRoute requireAdmin>
               <CRMRules
                 settings={settings}
                 setSettings={setSettings}

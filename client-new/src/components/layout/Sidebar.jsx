@@ -115,6 +115,7 @@ const Sidebar = ({ isCollapsed, onToggle, isMobileOpen, onMobileClose }) => {
  </div>
 
  {/* GROUP: WORKSPACE */}
+ {isAuthenticated && user?.role === 'admin' && (
  <div className="flex flex-col gap-1">
  {(!isCollapsed || isMobileOpen) && (
  <div className="px-3 mb-2 text-xs font-bold tracking-wider text-[var(--color-text-light)] uppercase fade-in">
@@ -122,16 +123,11 @@ const Sidebar = ({ isCollapsed, onToggle, isMobileOpen, onMobileClose }) => {
  </div>
  )}
  
- {isAuthenticated && (
- <>
  <NavItem to="/rules" icon={Sparkles} label="Automation Paths" isCollapsed={isCollapsed} isMobileOpen={isMobileOpen} onMobileClose={onMobileClose} />
  {/* <NavItem to="/templates" icon={FileText} label="Reply Templates" isCollapsed={isCollapsed} isMobileOpen={isMobileOpen} onMobileClose={onMobileClose} /> */}
- {user?.role === 'admin' && (
-   <NavItem to="/admin/create-account" icon={SlidersVertical} label="Account Management" isCollapsed={isCollapsed} isMobileOpen={isMobileOpen} onMobileClose={onMobileClose} />
- )}
- </>
- )}
+ <NavItem to="/admin/create-account" icon={SlidersVertical} label="Account Management" isCollapsed={isCollapsed} isMobileOpen={isMobileOpen} onMobileClose={onMobileClose} />
  </div>
+ )}
  </nav>
 
  <div className="px-4 pb-4 shrink-0">
