@@ -62,7 +62,7 @@ export default function LeadsPipeline() {
  const [selectedLeadId, setSelectedLeadId] = useState(null);
  const [showAddModal, setShowAddModal] = useState(false);
  const [viewMode, setViewMode] = useState(() => {
- return localStorage.getItem('leads_view_mode') || 'board';
+ return localStorage.getItem('leads_view_mode') || 'list';
  });
  const [draggedOverColumnId, setDraggedOverColumnId] = useState(null);
  const [selectedLeads, setSelectedLeads] = useState([]);

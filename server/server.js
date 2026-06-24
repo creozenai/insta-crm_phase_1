@@ -413,7 +413,7 @@ app.use('/api/meta', require('./routes/meta'));
 app.get('/api/leads/agents', require('./middleware/authMiddleware').protect, async (req, res) => {
   try {
     const User = require('./models/User');
-    const agents = await User.find().select('name email');
+    const agents = await User.find().select('name email role');
     res.json(agents);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch agents' });
