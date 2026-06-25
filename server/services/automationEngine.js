@@ -282,16 +282,21 @@ class AutomationEngine {
         const Lead = require('../models/Lead');
         const lead = await Lead.findOne({ platformUserId: instagramId });
         if (lead) {
-          await Comment.create({
-            instagramCommentId: response.data?.id || `auto_${Date.now()}`,
-            senderId: 'system',
-            text: text,
-            direction: 'outbound',
-            isAutomated: true,
-            parentCommentId: commentId,
-            leadId: lead._id,
-            createdAt: incomingTimestampMs ? new Date(incomingTimestampMs + 1000) : Date.now()
-          });
+          await Comment.updateOne(
+            { instagramCommentId: response.data?.id || `auto_${Date.now()}` },
+            {
+              $setOnInsert: {
+                senderId: 'system',
+                text: text,
+                direction: 'outbound',
+                isAutomated: true,
+                parentCommentId: commentId,
+                leadId: lead._id,
+                createdAt: incomingTimestampMs ? new Date(incomingTimestampMs + 1000) : Date.now()
+              }
+            },
+            { upsert: true }
+          );
         }
       }
     } catch (error) {
@@ -341,16 +346,21 @@ class AutomationEngine {
       });
     }
 
-    await Message.create({
-      conversationId: conversation._id,
-      instagramMessageId: messageId || `auto_${Date.now()}`,
-      senderId: 'system',
-      receiverId: instagramId,
-      text: text,
-      direction: 'outbound',
-      isAutomated: true,
-      createdAt: incomingTimestampMs ? new Date(incomingTimestampMs + 1000) : Date.now()
-    });
+    await Message.updateOne(
+      { instagramMessageId: messageId || `auto_${Date.now()}` },
+      {
+        $setOnInsert: {
+          conversationId: conversation._id,
+          senderId: 'system',
+          receiverId: instagramId,
+          text: text,
+          direction: 'outbound',
+          isAutomated: true,
+          createdAt: incomingTimestampMs ? new Date(incomingTimestampMs + 1000) : Date.now()
+        }
+      },
+      { upsert: true }
+    );
   }
 }
 

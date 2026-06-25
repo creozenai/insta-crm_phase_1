@@ -15,6 +15,7 @@ import {
  Circle,
  Edit2,
  X,
+ XCircle,
  Search,
  LayoutGrid,
  List
@@ -351,13 +352,18 @@ export default function TasksPage() {
  {/* Search Input */}
  <div className="relative w-full">
  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
- <input
- type="text"
- placeholder="Search by username or notes..."
- value={searchQuery}
- onChange={(e) => setSearchQuery(e.target.value)}
- className="w-full bg-[var(--color-bg-card)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)] transition-colors"
- />
+  <input
+  type="text"
+  placeholder="Search by username or notes..."
+  value={searchQuery}
+  onChange={(e) => setSearchQuery(e.target.value)}
+  className="w-full bg-[var(--color-bg-card)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl pl-9 pr-9 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+  />
+  {searchQuery && (
+    <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors" title="Clear search">
+      <X size={16} />
+    </button>
+  )}
  </div>
 
  {/* View Mode Toggle */}
@@ -542,9 +548,26 @@ export default function TasksPage() {
  </div>
  )}
  </div>
- </div>
- </div>
- </div>
+
+  {(dateFilter !== '' || assigneeFilters.length > 0 || statusFilters.length > 0 || priorityFilters.length > 0 || typeFilters.length > 0 || sortBy !== 'due_asc' || searchQuery !== '') && (
+    <button
+      onClick={() => {
+        setSearchQuery('');
+        setDateFilter('');
+        setAssigneeFilters([]);
+        setStatusFilters([]);
+        setPriorityFilters([]);
+        setTypeFilters([]);
+        setSortBy('due_asc');
+      }}
+      className="text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors flex items-center gap-1.5 px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-focus)] rounded-xl h-[40px] shrink-0"
+    >
+      <XCircle size={14} /> Clear Filters
+    </button>
+  )}
+  </div>
+  </div>
+  </div>
 
  {/* Tasks List Content */}
  {loading ? (

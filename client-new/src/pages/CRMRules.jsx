@@ -19,7 +19,9 @@ import {
  GitCommit,
  ChevronDown,
  CheckCircle2,
- Flame
+ Flame,
+ X,
+ Lock
 } from 'lucide-react';
 import CustomSelect from '../components/ui/CustomSelect';
 import Toggle from '../components/settings/Toggle';
@@ -29,7 +31,7 @@ import SettingRow from '../components/settings/SettingRow';
 import SettingsGroup from '../components/settings/SettingsGroup';
 import ReplyTextarea from '../components/settings/ReplyTextarea';
 
-function TargetPostsDropdown({ posts, selectedIds, onChange }) {
+function TargetPostsDropdown({ posts, selectedIds, onChange, disabled = false }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef(null);
@@ -64,8 +66,9 @@ function TargetPostsDropdown({ posts, selectedIds, onChange }) {
     <div className="relative" ref={dropdownRef}>
       <button 
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-lg p-2 text-left flex items-center justify-between focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] hover:border-[var(--color-border-hover)] transition-colors"
+        disabled={disabled}
+        onClick={() => { if (!disabled) setIsOpen(!isOpen) }}
+        className={`w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-lg p-2 text-left flex items-center justify-between focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] hover:border-[var(--color-border-hover)] transition-colors ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
       >
         <span>
           {selectedIds.length === 0 
@@ -85,8 +88,13 @@ function TargetPostsDropdown({ posts, selectedIds, onChange }) {
                 placeholder="Search posts..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-[var(--color-bg-app)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-md pl-8 pr-3 py-1.5 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] outline-none"
+                className="w-full bg-[var(--color-bg-app)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-md pl-8 pr-8 py-1.5 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] outline-none"
               />
+              {searchTerm && (
+                <button onClick={(e) => { e.stopPropagation(); setSearchTerm(''); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors" title="Clear search">
+                  <X size={14} />
+                </button>
+              )}
             </div>
             <div className="text-[10px] text-[var(--color-text-muted)] mt-1.5 px-1 font-medium">
               Showing {processedPosts.length} of {(posts || []).length} posts
@@ -185,7 +193,7 @@ function InstagramPreview({ text, keywords, placement }) {
  </div>
  
  {/* Automated reply outgoing message */}
- <div className={`self-end max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-tr-none font-normal ${
+ <div className={`self-end max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-tr-none font-normal whitespace-pre-wrap break-words ${
  resolvedText 
  ? 'bg-[var(--color-primary)] text-white' 
  : 'bg-[var(--color-bg-active)] text-[var(--color-text-light)] italic'
@@ -230,7 +238,7 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
  }, [token]);
 
  return (
-  <div className="fade-in space-y-6 max-w-6xl mx-auto py-4">
+  <div className="fade-in space-y-6 max-w-6xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
   <div className="border-b border-[var(--color-border-subtle)] pb-3 mb-6">
     <h1 className="text-xl font-bold text-[var(--color-text-main)] tracking-tight">Automation Paths</h1>
     <p className="text-sm text-[var(--color-text-muted)] mt-1">Configure global rules and specific post paths.</p>
@@ -243,7 +251,7 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
   ) : (
   <div className="fade-in w-full space-y-6 pb-20">
  {/* Global Rules Section */}
- <div className="card-panel p-6 bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)]">
+ <div className="card-panel p-4 sm:p-6 bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)]">
  <div className="mb-6 pb-4 border-b border-[var(--color-border-subtle)]">
  <h2 className="text-lg font-bold text-[var(--color-text-main)] flex items-center gap-2">
  Global Rules
@@ -308,7 +316,7 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
 
  <div className="pt-6 mt-6 border-t border-[var(--color-border-subtle)]">
  <h3 className="text-sm font-bold text-[var(--color-text-main)] mb-4">Fallback Settings</h3>
- <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
  <div>
  <label className="block text-xs font-semibold text-[var(--color-text-muted)] mb-1">Unmatched Comments on Targeted Posts</label>
  <CustomSelect 
@@ -339,8 +347,8 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
  </div>
 
  {/* Automation Rules Section */}
- <div className="card-panel p-6 bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)]">
- <div className="mb-6 pb-4 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+ <div className="card-panel p-4 sm:p-6 bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)]">
+ <div className="mb-6 pb-4 border-b border-[var(--color-border-subtle)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
  <div>
  <h2 className="text-lg font-bold text-[var(--color-text-main)] flex items-center gap-2">
  Post-Specific Automation Rules
@@ -367,10 +375,29 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
 
  {settings?.leadConversionLogic === 'sequence' ? (
  <div className="space-y-6">
- <div className="flex items-center justify-between">
+ <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
  <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
  Configured Paths (OR)
  </p>
+ <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+ <Button
+ onClick={() => {
+   if (settings?.leadConversionRules?.length > 2) {
+     if (window.confirm('Are you sure you want to remove all custom paths and restore the default configuration?')) {
+       setSettings({
+         ...settings,
+         leadConversionRules: settings.leadConversionRules.slice(0, 2)
+       });
+     }
+   }
+ }}
+ variant="outline"
+ size="sm"
+ disabled={(settings?.leadConversionRules?.length || 0) <= 2}
+ title="Remove custom paths and restore predefined paths"
+ >
+ Reset
+ </Button>
  <Button
  onClick={() => {
  const newRules = [...(settings?.leadConversionRules || []), { id: Math.random().toString(36).substr(2, 9), isActive: true, sequence: [] }];
@@ -383,6 +410,7 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
  Add New Path
  </Button>
  </div>
+ </div>
  
  {(!settings?.leadConversionRules || settings?.leadConversionRules.length === 0) && (
  <div className="text-sm text-[var(--color-status-error)] bg-[var(--color-status-error-bg)] p-3 rounded-lg border border-[var(--color-status-error)]/30 font-medium">
@@ -391,44 +419,54 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
  )}
 
  <div className="space-y-4">
- {(settings?.leadConversionRules || []).map((rule, ruleIdx) => (
+ {(settings?.leadConversionRules || []).map((rule, ruleIdx) => {
+ const isLocked = ruleIdx === 0 || ruleIdx === 1;
+ return (
  <div key={rule.id || ruleIdx} className={`bg-[var(--color-bg-subtle)] border border-[var(--color-border-subtle)] rounded-xl transition-opacity ${!rule.isActive ? 'opacity-60' : ''}`}>
- <div className="bg-[var(--color-bg-app)] rounded-t-xl px-4 py-3 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
- <div className="flex items-center gap-3">
+ <div className="bg-[var(--color-bg-app)] rounded-t-xl px-4 py-3 border-b border-[var(--color-border-subtle)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+ <div className="flex items-center gap-3 w-full sm:w-auto">
  <Toggle 
  enabled={rule.isActive !== false} 
+ disabled={isLocked}
  onChange={(val) => {
  const newRules = [...settings.leadConversionRules];
  newRules[ruleIdx] = { ...newRules[ruleIdx], isActive: val };
  setSettings({ ...settings, leadConversionRules: newRules });
  }} 
  />
- <span className="font-bold text-sm text-[var(--color-text-main)]">Path {ruleIdx + 1}</span>
+ <span className="font-bold text-sm text-[var(--color-text-main)] flex items-center gap-1.5">
+   Path {ruleIdx + 1}
+   {isLocked && <span className="text-xs font-semibold text-[var(--color-text-muted)] bg-[var(--color-bg-card)] px-1.5 py-0.5 rounded border border-[var(--color-border-subtle)] flex items-center gap-1"><Lock size={10} /> Locked</span>}
+ </span>
  <div className="h-4 w-[1px] bg-[var(--color-border-subtle)] mx-1"></div>
  <button
+   disabled={isLocked}
    onClick={() => {
+     if (isLocked) return;
      const newRules = [...settings.leadConversionRules];
      newRules[ruleIdx] = { ...newRules[ruleIdx], isHot: !rule.isHot };
      setSettings({ ...settings, leadConversionRules: newRules });
    }}
-   className={`text-xs font-semibold px-2 py-1 rounded border flex items-center gap-1.5 transition-colors ${rule.isHot ? 'bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] border-[var(--color-status-error)]/30 hover:bg-[var(--color-status-error-bg)]/80' : 'bg-[var(--color-bg-card)] text-[var(--color-text-muted)] border-[var(--color-border-subtle)] hover:text-[var(--color-text-main)] hover:border-[var(--color-border-focus)]'}`}
+   className={`text-xs font-semibold px-2 py-1 rounded border flex items-center gap-1.5 transition-colors ${rule.isHot ? 'bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] border-[var(--color-status-error)]/30 hover:bg-[var(--color-status-error-bg)]/80' : 'bg-[var(--color-bg-card)] text-[var(--color-text-muted)] border-[var(--color-border-subtle)] hover:text-[var(--color-text-main)] hover:border-[var(--color-border-focus)]'} ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
  >
    <Flame size={14} className={rule.isHot ? 'text-[var(--color-status-error)]' : 'text-[var(--color-text-light)]'} />
    {rule.isHot ? 'Hot Lead' : 'Normal Lead'}
  </button>
  </div>
- <Button
- onClick={() => {
- const newRules = [...settings.leadConversionRules];
- newRules.splice(ruleIdx, 1);
- setSettings({ ...settings, leadConversionRules: newRules });
- }}
- variant="ghost"
- size="sm"
- icon={Trash2}
- title="Delete this entire path"
- className="text-[var(--color-text-light)] hover:text-[var(--color-status-error)]"
- />
+ {!isLocked && (
+   <Button
+   onClick={() => {
+   const newRules = [...settings.leadConversionRules];
+   newRules.splice(ruleIdx, 1);
+   setSettings({ ...settings, leadConversionRules: newRules });
+   }}
+   variant="ghost"
+   size="sm"
+   icon={Trash2}
+   title="Delete this entire path"
+   className="text-[var(--color-text-light)] hover:text-[var(--color-status-error)]"
+   />
+ )}
  </div>
 
  <div className="p-4 space-y-3">
@@ -454,19 +492,21 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
             {stepObj.type === 'dm_sent' && 'Admin sends a Direct Message'}
           </span>
         </div>
-        <Button
-          onClick={() => {
-            const newRules = [...settings.leadConversionRules];
-            newRules[ruleIdx].sequence = [...newRules[ruleIdx].sequence];
-            newRules[ruleIdx].sequence.splice(idx, 1);
-            setSettings({ ...settings, leadConversionRules: newRules });
-          }}
-          variant="ghost"
-          size="sm"
-          icon={Trash2}
-          title="Delete this entire path"
-          className="text-[var(--color-text-light)] hover:text-[var(--color-status-error)]"
-        />
+        {!isLocked && (
+          <Button
+            onClick={() => {
+              const newRules = [...settings.leadConversionRules];
+              newRules[ruleIdx].sequence = [...newRules[ruleIdx].sequence];
+              newRules[ruleIdx].sequence.splice(idx, 1);
+              setSettings({ ...settings, leadConversionRules: newRules });
+            }}
+            variant="ghost"
+            size="sm"
+            icon={Trash2}
+            title="Delete this step"
+            className="text-[var(--color-text-light)] hover:text-[var(--color-status-error)]"
+          />
+        )}
       </div>
 
       <div className="pl-9 space-y-3">
@@ -474,8 +514,9 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
           <label className="block text-xs font-semibold text-[var(--color-text-muted)] mb-1">Trigger Keywords (Comma separated, Optional)</label>
           <input 
             type="text" 
+            disabled={isLocked}
             placeholder="e.g. price, details, link (comma separated)" 
-            className="w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-lg focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] p-2"
+            className={`w-full border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-lg focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] p-2 ${isLocked ? 'bg-[var(--color-bg-hover)] opacity-70 cursor-not-allowed' : 'bg-[var(--color-bg-subtle)]'}`}
             value={stepObj.keywords || ''}
             onChange={(e) => {
               const newRules = [...settings.leadConversionRules];
@@ -495,6 +536,7 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
             </div>
             <TargetPostsDropdown 
               posts={posts}
+              disabled={isLocked}
               selectedIds={stepObj.postIds || []}
               onChange={(newSelectedIds) => {
                 const newRules = [...settings.leadConversionRules];
@@ -514,7 +556,8 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
               <textarea 
                 placeholder="Type a message to reply automatically..." 
                 rows={2}
-                className="w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-lg focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] p-2 resize-none"
+                disabled={isLocked}
+                className={`w-full border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-lg focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] p-2 resize-none ${isLocked ? 'bg-[var(--color-bg-hover)] opacity-70 cursor-not-allowed' : 'bg-[var(--color-bg-subtle)]'}`}
                 value={stepObj.autoReplyText || ''}
                 onChange={(e) => {
                   const newRules = [...settings.leadConversionRules];
@@ -537,6 +580,7 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
                   <input 
                     type="checkbox" 
                     className="pro-checkbox"
+                    disabled={isLocked}
                     checked={stepObj.useSameResponse || false}
                     onChange={(e) => {
                       const checked = e.target.checked;
@@ -557,7 +601,8 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
               <textarea 
                 placeholder="Type a public comment reply..." 
                 rows={2}
-                className="w-full bg-[var(--color-bg-subtle)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-lg focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] p-2 resize-none"
+                disabled={isLocked}
+                className={`w-full border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-lg focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] p-2 resize-none ${isLocked ? 'bg-[var(--color-bg-hover)] opacity-70 cursor-not-allowed' : 'bg-[var(--color-bg-subtle)]'}`}
                 value={stepObj.autoReplyText || ''}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -578,8 +623,8 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
               <textarea 
                 placeholder="Type a private DM reply..." 
                 rows={2}
-                disabled={stepObj.useSameResponse}
-                className={`w-full border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-lg focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] p-2 resize-none ${stepObj.useSameResponse ? 'bg-[var(--color-bg-hover)] opacity-70 cursor-not-allowed' : 'bg-[var(--color-bg-subtle)]'}`}
+                disabled={stepObj.useSameResponse || isLocked}
+                className={`w-full border border-[var(--color-border-subtle)] text-[var(--color-text-main)] text-xs rounded-lg focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] p-2 resize-none ${(stepObj.useSameResponse || isLocked) ? 'bg-[var(--color-bg-hover)] opacity-70 cursor-not-allowed' : 'bg-[var(--color-bg-subtle)]'}`}
                 value={stepObj.dmAutoReplyText || ''}
                 onChange={(e) => {
                   const newRules = [...settings.leadConversionRules];
@@ -599,6 +644,7 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
 })}
 
  {/* Add step control for this specific rule */}
+ {!isLocked && (
  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[var(--color-border-subtle)]/50">
  <CustomSelect 
  value={newStepSelections[ruleIdx] || "comment_received"}
@@ -626,9 +672,11 @@ export default function CRMRules({ settings, setSettings, handleSaveSettings, sa
  Add Step
  </Button>
  </div>
+ )}
  </div>
  </div>
- ))}
+ );
+ })}
  </div>
  </div>
  ) : (

@@ -54,7 +54,7 @@ export default function LeadDetailModal({ leadId, onClose }) {
  const [name, setName] = useState('');
  const [email, setEmail] = useState('');
  const [phone, setPhone] = useState('');
- const [address, setAddress] = useState('');
+ const [city, setCity] = useState('');
  const [platform, setPlatform] = useState('other');
  const [otherPlatform, setOtherPlatform] = useState('');
  const [username, setUsername] = useState('');
@@ -133,7 +133,7 @@ export default function LeadDetailModal({ leadId, onClose }) {
  setName(leadData.name || '');
  setEmail(leadData.email || '');
  setPhone(leadData.phone || '');
- setAddress(leadData.address || '');
+ setCity(leadData.city || '');
  const p = leadData.platform || 'other';
  if (['instagram', 'facebook', 'youtube', 'linkedin', 'other'].includes(p)) {
    setPlatform(p);
@@ -187,7 +187,7 @@ export default function LeadDetailModal({ leadId, onClose }) {
  name,
  email,
  phone,
- address,
+ city,
  platform: platform === 'other' ? otherPlatform.trim() : platform,
  username
  })
@@ -429,6 +429,25 @@ export default function LeadDetailModal({ leadId, onClose }) {
  className="w-full bg-[var(--color-bg-subtle)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)] transition-colors"
  />
  </div>
+
+ {/* Assigned to agent select */}
+ {user?.role === 'admin' && (
+ <div className="space-y-1.5">
+ <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Assigned Agent</label>
+ <CustomSelect
+ value={assignedTo}
+ onChange={(e) => setAssignedTo(e.target.value)}
+ options={[
+ { value: "", label: "Unassigned" },
+ ...(user ? [{ value: user.id || user._id, label: "Assign to Me" }] : []),
+ ...agents
+ .filter(a => String(a._id) !== String(user?.id || user?._id))
+ .map(a => ({ value: a._id, label: `${a.name} (${a.role})` }))
+ ]}
+ className="w-full"
+ />
+ </div>
+ )}
  <div className="space-y-1.5">
  <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Name</label>
  <input
@@ -457,11 +476,11 @@ export default function LeadDetailModal({ leadId, onClose }) {
  />
  </div>
  <div className="space-y-1.5">
- <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Address</label>
+ <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">City</label>
  <input
  type="text"
- value={address}
- onChange={(e) => setAddress(e.target.value)}
+ value={city}
+ onChange={(e) => setCity(e.target.value)}
  className="w-full bg-[var(--color-bg-subtle)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)] transition-colors"
  />
  </div>
@@ -499,24 +518,6 @@ export default function LeadDetailModal({ leadId, onClose }) {
  />
  </div>
 
- {/* Assigned to agent select */}
- {user?.role === 'admin' && (
- <div className="space-y-1.5">
- <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Assigned Agent</label>
- <CustomSelect
- value={assignedTo}
- onChange={(e) => setAssignedTo(e.target.value)}
- options={[
- { value: "", label: "Unassigned" },
- ...(user ? [{ value: user.id || user._id, label: "Assign to Me" }] : []),
- ...agents
- .filter(a => String(a._id) !== String(user?.id || user?._id))
- .map(a => ({ value: a._id, label: `${a.name} (${a.role})` }))
- ]}
- className="w-full"
- />
- </div>
- )}
 
  {/* Tags input */}
  <div className="space-y-2">

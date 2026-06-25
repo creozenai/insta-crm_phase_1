@@ -25,7 +25,9 @@ import {
  List,
  Trash2,
  Sparkles,
- Calendar
+ Calendar,
+ X,
+ XCircle
 } from 'lucide-react';
 import CustomSelect from '../components/ui/CustomSelect';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
@@ -85,7 +87,7 @@ export default function LeadsPipeline() {
  const [newName, setNewName] = useState('');
  const [newEmail, setNewEmail] = useState('');
  const [newPhone, setNewPhone] = useState('');
- const [newAddress, setNewAddress] = useState('');
+ const [newCity, setNewCity] = useState('');
  const [newStatus, setNewStatus] = useState('new');
  const [newPriority, setNewPriority] = useState('normal');
  const [newNotes, setNewNotes] = useState('');
@@ -293,7 +295,7 @@ export default function LeadsPipeline() {
  name: newName.trim(),
  email: newEmail.trim(),
  phone: newPhone.trim(),
- address: newAddress.trim(),
+ city: newCity.trim(),
  status: newStatus,
  priority: newPriority,
  notes: newNotes.trim(),
@@ -311,7 +313,7 @@ export default function LeadsPipeline() {
  setNewName('');
  setNewEmail('');
  setNewPhone('');
- setNewAddress('');
+ setNewCity('');
  setNewStatus('new');
  setNewPriority('normal');
  setNewNotes('');
@@ -459,6 +461,15 @@ export default function LeadsPipeline() {
   <span className="text-[var(--color-text-light)] text-xs font-medium">Normal</span>
   )
   )
+  },
+  {
+  label: 'Date',
+  render: (lead) => (
+  <div className="flex flex-col text-xs text-[var(--color-text-muted)] whitespace-nowrap">
+  <span className="font-semibold text-[var(--color-text-main)]">{new Date(lead.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+  <span>{new Date(lead.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+  </div>
+  )
   }
  ];
 
@@ -496,8 +507,13 @@ export default function LeadsPipeline() {
  placeholder="Search leads by username or tag…"
  value={search}
  onChange={(e) => setSearch(e.target.value)}
- className="w-full bg-[var(--color-bg-card)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
+ className="w-full bg-[var(--color-bg-card)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl pl-10 pr-10 py-2.5 focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
  />
+ {search && (
+   <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]" title="Clear search">
+     <X size={16} />
+   </button>
+ )}
  </div>
 
  <div className="flex items-center gap-3 shrink-0">
@@ -699,6 +715,24 @@ export default function LeadsPipeline() {
             { value: "normal", label: <span className="flex items-center gap-1.5"><User size={14} className="text-[var(--color-text-muted)]" /> Normal Leads</span> }
           ]}
         />
+        {(statusFilters.length > 0 || priorityFilter !== 'all' || sourceFilter !== '' || postFilter !== '' || datePreset !== 'all' || sortBy !== 'updated_desc' || search !== '') && (
+          <button
+            onClick={() => {
+              setSearch('');
+              setStatusFilters([]);
+              setPriorityFilter('all');
+              setSourceFilter('');
+              setPostFilter('');
+              setDatePreset('all');
+              setCustomStartDate('');
+              setCustomEndDate('');
+              setSortBy('updated_desc');
+            }}
+            className="text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors flex items-center gap-1.5 px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-focus)] rounded-xl h-[42px]"
+          >
+            <XCircle size={14} /> Clear Filters
+          </button>
+        )}
  </div>
 
  {/* Content Area */}
@@ -964,10 +998,10 @@ export default function LeadsPipeline() {
       onChange={(e) => setNewPUserId(e.target.value)}
     />
     <Input
-      label="Address"
-      placeholder="e.g. 123 Main St, NY"
-      value={newAddress}
-      onChange={(e) => setNewAddress(e.target.value)}
+      label="City"
+      placeholder="e.g. Mumbai, NY"
+      value={newCity}
+      onChange={(e) => setNewCity(e.target.value)}
     />
   </div>
 

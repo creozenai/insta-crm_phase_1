@@ -20,7 +20,8 @@ import {
  GitCommit,
  ChevronDown,
  CheckCircle2,
- Flame
+ Flame,
+ X
 } from 'lucide-react';
 import CustomSelect from '../components/ui/CustomSelect';
 import Toggle from '../components/settings/Toggle';
@@ -90,7 +91,7 @@ function InstagramPreview({ text, keywords, placement }) {
  </div>
  
  {/* Automated reply outgoing message */}
- <div className={`self-end max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-tr-none font-normal ${
+ <div className={`self-end max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-tr-none font-normal whitespace-pre-wrap break-words ${
  resolvedText 
  ? 'bg-[var(--color-primary)] text-white' 
  : 'bg-[var(--color-bg-active)] text-[var(--color-text-light)] italic'
@@ -209,7 +210,7 @@ export default function CRMTemplates() {
  body: JSON.stringify({
  title: tempTitle.trim(),
  category: tempCategory,
- body: tempBody.trim()
+ body: tempBody
  })
  });
  const data = await res.json();
@@ -252,22 +253,27 @@ export default function CRMTemplates() {
  };
 
  return (
- <div className="fade-in space-y-6 max-w-6xl mx-auto py-4">
-  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-[var(--color-border-subtle)] pb-3 mb-6">
+ <div className="fade-in space-y-6 max-w-6xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[var(--color-border-subtle)] pb-3 mb-6">
     <div>
       <h1 className="text-xl font-bold text-[var(--color-text-main)] tracking-tight">Reply Templates</h1>
       <p className="text-sm text-[var(--color-text-muted)] mt-1">Manage and preview reusable response blocks.</p>
     </div>
 
-    <div className="relative w-full md:max-w-xs shrink-0">
+    <div className="relative w-full sm:max-w-xs shrink-0">
     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
     <input
     type="text"
     placeholder="Search templates..."
     value={searchQuery}
     onChange={(e) => setSearchQuery(e.target.value)}
-    className="w-full bg-[var(--color-bg-card)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] transition-colors "
+    className="w-full bg-[var(--color-bg-card)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-lg pl-9 pr-9 py-2 text-sm focus:outline-none focus:border-[var(--color-primary)] transition-colors "
     />
+    {searchQuery && (
+      <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]" title="Clear search">
+        <X size={16} />
+      </button>
+    )}
     </div>
   </div>
 
@@ -276,10 +282,10 @@ export default function CRMTemplates() {
  <Spinner className="text-[var(--color-primary)]" />
  </div>
  ) : (
- <div className="flex flex-col md:flex-row gap-6">
+ <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
  
  {/* Left Panel: Form & Preview Simulator */}
- <div className="w-full md:w-[350px] shrink-0 flex flex-col gap-6">
+ <div className="w-full lg:w-[350px] xl:w-[400px] shrink-0 flex flex-col gap-6">
  {/* Add/Edit Reply Template Form */}
  <div className="card-panel p-5 bg-[var(--color-bg-card)] transition-colors duration-300">
  <h3 className="font-bold text-sm text-[var(--color-text-main)] border-b border-[var(--color-border-subtle)] pb-2 mb-4 uppercase tracking-wider flex items-center gap-2">
@@ -371,7 +377,7 @@ export default function CRMTemplates() {
  </p>
  </div>
  ) : (
- <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+ <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
  {templates.filter(template => {
  if (!searchQuery) return true;
  const q = searchQuery.toLowerCase();
@@ -384,17 +390,17 @@ export default function CRMTemplates() {
  className="card-panel p-5 bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-focus)] transition-all flex flex-col justify-between"
  >
  <div>
- <div className="flex items-start justify-between mb-2.5 w-full">
- <div className="min-w-0 pr-3 flex-1">
+ <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 w-full gap-3 sm:gap-2">
+ <div className="min-w-0 flex-1 w-full sm:w-auto">
  <h4 className="font-bold text-base text-[var(--color-text-main)] truncate" title={template.title}>
  {template.title}
  </h4>
- <span className="text-xs uppercase font-bold text-[var(--color-text-muted)] tracking-wider block mt-0.5 truncate">
+ <span className="text-xs uppercase font-bold text-[var(--color-text-muted)] tracking-wider block mt-1 truncate">
  Category: {template.category}
  </span>
  </div>
 
- <div className="flex items-center gap-1 shrink-0">
+ <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 self-end sm:self-auto bg-[var(--color-bg-subtle)] sm:bg-transparent p-1 sm:p-0 rounded-lg sm:rounded-none w-full sm:w-auto justify-end">
  <Button
  onClick={() => handleCopy(template.body, template._id)}
  variant="ghost"

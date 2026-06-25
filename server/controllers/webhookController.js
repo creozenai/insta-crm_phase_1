@@ -105,7 +105,8 @@ async function handleComment(commentData, businessAccountId, timestampMs) {
   // Save comment to database
   let lead = null;
   if (!isSelf) {
-    lead = await Lead.findOne({ platformUserId: senderId });
+    // Ensure lead exists so all comments are saved, even if no sequence triggered
+    lead = await automationEngine.ensureLeadExists(senderId, username, 'comment', 'normal');
   } else if (commentData.parent_id) {
     const parentComment = await Comment.findOne({ instagramCommentId: commentData.parent_id });
     if (parentComment) {
@@ -209,7 +210,14 @@ async function handleDirectMessage(messageEvent, businessAccountId, fallbackTime
   const Message = require('../models/Message');
 
   // Find lead to attach conversation
-  let lead = await Lead.findOne({ platformUserId: leadPlatformId });
+  let lead = null;
+  if (!isSelf) {
+    // Ensure lead exists so all DMs are saved, even if no sequence triggered
+    lead = await automationEngine.ensureLeadExists(leadPlatformId, messageEvent.sender.username || 'unknown', 'dm', 'normal');
+  } else {
+    lead = await Lead.findOne({ platformUserId: leadPlatformId });
+  }
+  
   if (lead) {
     let conversation = await Conversation.findOne({ instagramThreadId: `thread_${leadPlatformId}` });
     

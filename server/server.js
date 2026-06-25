@@ -212,16 +212,19 @@ app.get('/api/leads', require('./middleware/authMiddleware').protect, async (req
       query._id = { $in: comments.map(c => c.leadId) };
     }
 
-    let sort = { createdAt: -1 };
+    let sort = { createdAt: -1, _id: -1 };
     if (req.query.sort) {
-      if (req.query.sort === 'updated_desc') sort = { updatedAt: -1 };
-      if (req.query.sort === 'newest') sort = { createdAt: -1 };
-      if (req.query.sort === 'oldest') sort = { createdAt: 1 };
-      if (req.query.sort === 'username_asc') sort = { username: 1 };
-      if (req.query.sort === 'username_desc') sort = { username: -1 };
+      if (req.query.sort === 'updated_desc') sort = { updatedAt: -1, _id: -1 };
+      if (req.query.sort === 'newest') sort = { createdAt: -1, _id: -1 };
+      if (req.query.sort === 'oldest') sort = { createdAt: 1, _id: 1 };
+      if (req.query.sort === 'username_asc') sort = { username: 1, _id: 1 };
+      if (req.query.sort === 'username_desc') sort = { username: -1, _id: -1 };
     }
 
-    const leads = await Lead.find(query).sort(sort).populate('assignedTo', 'name email');
+    const leads = await Lead.find(query)
+      .collation({ locale: 'en', strength: 2 })
+      .sort(sort)
+      .populate('assignedTo', 'name email');
     res.json(leads);
   } catch (err) {
     res.status(500).json({ error: err.message });

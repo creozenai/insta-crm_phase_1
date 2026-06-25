@@ -22,7 +22,7 @@ const leadSchema = new mongoose.Schema({
   phone: {
     type: String
   },
-  address: {
+  city: {
     type: String
   },
   source: {
