@@ -281,16 +281,24 @@ const { login, register, getMe } = require('./controllers/authController');
 app.post('/api/auth/crm/login', async (req, res) => {
   // We need to wrap the response to match what client-new expects
   const mockRes = {
-    status: (code) => ({ json: (data) => res.status(code).json(data) }),
-    json: (data) => {
+    status: function(code) { 
+      this.statusCode = code; 
+      return this; 
+    },
+    json: function(data) {
       if (data.success && data.token) {
-        return res.json({
+        return res.status(this.statusCode || 200).json({
           accessToken: data.token,
           refreshToken: data.token, // Mock refresh token
-          user: { _id: data._id, name: data.name, email: data.email, role: data.role || 'admin' }
+          user: { 
+            _id: data.user ? data.user._id : data._id, 
+            name: data.user ? data.user.name : data.name, 
+            email: data.user ? data.user.email : data.email, 
+            role: data.user ? data.user.role : (data.role || 'admin') 
+          }
         });
       }
-      return res.status(401).json(data);
+      return res.status(this.statusCode || 401).json(data);
     }
   };
   await login(req, mockRes);
@@ -298,12 +306,15 @@ app.post('/api/auth/crm/login', async (req, res) => {
 
 app.post('/api/auth/crm/register', async (req, res) => {
   const mockRes = {
-    status: (code) => ({ json: (data) => res.status(code).json(data) }),
-    json: (data) => {
+    status: function(code) { 
+      this.statusCode = code; 
+      return this; 
+    },
+    json: function(data) {
       if (data.success && data.token) {
-        return res.json({ accessToken: data.token, refreshToken: data.token, user: { _id: data._id, name: data.name, email: data.email, role: data.role || 'admin' } });
+        return res.status(this.statusCode || 200).json({ accessToken: data.token, refreshToken: data.token, user: { _id: data._id, name: data.name, email: data.email, role: data.role || 'admin' } });
       }
-      return res.status(400).json(data);
+      return res.status(this.statusCode || 400).json(data);
     }
   };
   await register(req, mockRes);
@@ -311,12 +322,15 @@ app.post('/api/auth/crm/register', async (req, res) => {
 
 app.get('/api/auth/crm/me', require('./middleware/authMiddleware').protect, async (req, res) => {
   const mockRes = {
-    status: (code) => ({ json: (data) => res.status(code).json(data.data || data) }),
-    json: (data) => {
+    status: function(code) { 
+      this.statusCode = code; 
+      return this; 
+    },
+    json: function(data) {
       if (data.success && data.data) {
-        return res.json(data.data);
+        return res.status(this.statusCode || 200).json(data.data);
       }
-      return res.json(data);
+      return res.status(this.statusCode || 200).json(data);
     }
   };
   await getMe(req, mockRes);
