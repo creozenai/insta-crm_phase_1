@@ -26,8 +26,7 @@ router.get('/', async (req, res) => {
       query.$or = [
         { assignedTo: req.user._id },
         { createdBy: req.user._id },
-        { leadId: { $in: agentLeadIds }, assignedTo: null },
-        { leadId: { $in: agentLeadIds }, assignedTo: { $exists: false } }
+        { leadId: { $in: agentLeadIds } }
       ];
     }
 

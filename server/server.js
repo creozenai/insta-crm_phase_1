@@ -218,7 +218,13 @@ app.get('/api/leads', require('./middleware/authMiddleware').protect, async (req
     if (req.query.status) query.status = { $in: req.query.status.split(',') };
     if (req.query.priority) query.priority = req.query.priority;
     if (req.query.source) query.source = req.query.source;
-    if (req.query.assignedToMe === 'true') query.assignedTo = req.user._id;
+    
+    // Role-based restrictions
+    if (req.user && req.user.role === 'agent') {
+      query.assignedTo = req.user._id;
+    } else if (req.query.assignedToMe === 'true') {
+      query.assignedTo = req.user._id;
+    }
 
     if (req.query.startDate || req.query.endDate) {
       query.createdAt = {};
