@@ -192,7 +192,7 @@ export default function CRMAnalytics() {
  <div className="card-panel p-6 flex flex-col gap-4 relative overflow-hidden group">
  <div className="flex items-center gap-2">
  <span className="text-sm font-medium text-[var(--color-text-muted)]">Hot Leads</span>
- <span title="Leads marked with high priority" className="flex items-center cursor-help">
+ <span title="Top-priority leads requiring immediate attention" className="flex items-center cursor-help">
    <AlertCircle size={14} className="text-[var(--color-text-light)]" />
  </span>
  </div>
