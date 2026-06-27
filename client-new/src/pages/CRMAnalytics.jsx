@@ -29,7 +29,7 @@ export default function CRMAnalytics() {
  const [loading, setLoading] = useState(true);
  
  const [periodType, setPeriodType] = useState('preset');
- const [period, setPeriod] = useState(7);
+ const [period, setPeriod] = useState('24h');
  const [startDate, setStartDate] = useState('');
  const [endDate, setEndDate] = useState('');
  const [isSyncing, setIsSyncing] = useState(false);
@@ -139,27 +139,28 @@ export default function CRMAnalytics() {
  </div>
  )}
 
- <CustomSelect 
- value={periodType === 'custom' ? 'custom' : period}
- onChange={(e) => {
- const val = e.target.value;
- if (val === 'custom') {
- setPeriodType('custom');
- } else {
- setPeriodType('preset');
- setPeriod(Number(val));
- }
- }}
- options={[
- { value: 7, label: "Last 7 Days" },
- { value: 14, label: "Last 14 Days" },
- { value: 30, label: "Last 30 Days" },
- { value: 60, label: "Last 2 Months" },
- { value: 180, label: "Last 6 Months" },
- { value: 365, label: "Last 1 Year" },
- { value: "custom", label: "Custom Range..." }
- ]}
- />
+  <CustomSelect 
+  value={periodType === 'custom' ? 'custom' : period}
+  onChange={(e) => {
+  const val = e.target.value;
+  if (val === 'custom') {
+  setPeriodType('custom');
+  } else {
+  setPeriodType('preset');
+  setPeriod(val === '24h' ? val : Number(val));
+  }
+  }}
+  options={[
+  { value: '24h', label: "Last 24 Hours" },
+  { value: 7, label: "Last 7 Days" },
+  { value: 14, label: "Last 14 Days" },
+  { value: 30, label: "Last 30 Days" },
+  { value: 60, label: "Last 2 Months" },
+  { value: 180, label: "Last 6 Months" },
+  { value: 365, label: "Last 1 Year" },
+  { value: "custom", label: "Custom Range..." }
+  ]}
+  />
 
  {/* <Button 
   onClick={handleSync}

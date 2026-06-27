@@ -71,7 +71,7 @@ router.get('/', async (req, res) => {
       if (req.query.sort === 'created_asc') sort = { createdAt: 1 };
     }
 
-    const tasks = await Task.find(query).sort(sort).populate('assignedTo', 'name email').populate('leadId', 'username');
+    const tasks = await Task.find(query).sort(sort).populate('assignedTo', 'name email').populate('leadId', 'username phone city');
     res.json(tasks);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch tasks' });
@@ -88,7 +88,7 @@ router.post('/', async (req, res) => {
     
     const populatedTask = await Task.findById(task._id)
       .populate('assignedTo', 'name email')
-      .populate('leadId', 'username');
+      .populate('leadId', 'username phone city');
       
     res.status(201).json(populatedTask);
   } catch (err) {
@@ -101,7 +101,7 @@ router.put('/:id', async (req, res) => {
   try {
     const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true })
       .populate('assignedTo', 'name email')
-      .populate('leadId', 'username');
+      .populate('leadId', 'username phone city');
     res.json(task);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update task' });

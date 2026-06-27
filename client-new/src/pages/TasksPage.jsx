@@ -18,7 +18,9 @@ import {
  XCircle,
  Search,
  LayoutGrid,
- List
+ List,
+ Phone,
+ MapPin
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -260,6 +262,14 @@ export default function TasksPage() {
  render: (task) => <span className="font-semibold text-sm text-[var(--color-text-main)]">@{task.leadId?.username || 'Manual'}</span>
  },
  {
+ label: 'Phone',
+ render: (task) => <span className="text-sm text-[var(--color-text-main)]">{task.leadId?.phone || '-'}</span>
+ },
+ {
+ label: 'City',
+ render: (task) => <span className="text-sm text-[var(--color-text-main)]">{task.leadId?.city || '-'}</span>
+ },
+ {
  label: 'Type',
  render: (task) => (
  <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
@@ -281,11 +291,7 @@ export default function TasksPage() {
  if (task.priority === 'medium') variant = 'warning';
  return <Badge variant={variant}>{task.priority || 'medium'}</Badge>;
  }
- },
- {
- label: 'Notes',
- className: 'max-w-[200px] truncate text-sm',
- render: (task) => <span title={task.notes}>{task.notes || '-'}</span>
+
  },
  {
  label: 'Due Date',
@@ -603,6 +609,12 @@ export default function TasksPage() {
  <span className="font-bold text-sm text-[var(--color-text-main)] truncate">
  @{task.leadId?.username || 'Manual Lead'}
  </span>
+ {(task.leadId?.phone || task.leadId?.city) && (
+ <div className="text-xs text-[var(--color-text-muted)] flex items-center gap-3">
+ {task.leadId?.phone && <span className="flex items-center gap-1"><Phone size={12} /> {task.leadId.phone}</span>}
+ {task.leadId?.city && <span className="flex items-center gap-1"><MapPin size={12} /> {task.leadId.city}</span>}
+ </div>
+ )}
 
  <div className="flex items-center gap-1.5 flex-wrap">
  {/* Priority Badge */}
@@ -719,6 +731,18 @@ export default function TasksPage() {
  {editError && (
  <div className="bg-[var(--color-status-error-bg)] text-[var(--color-status-error)] p-3 rounded-lg text-xs font-medium">
  {editError}
+ </div>
+ )}
+
+ {editingTask?.leadId && (
+ <div className="bg-[var(--color-bg-subtle)] p-3 rounded-lg border border-[var(--color-border-subtle)]">
+ <p className="text-sm font-semibold text-[var(--color-text-main)] mb-1">Lead: @{editingTask.leadId.username}</p>
+ {(editingTask.leadId.phone || editingTask.leadId.city) && (
+  <div className="text-xs text-[var(--color-text-muted)] flex flex-col gap-1.5 mt-1">
+  {editingTask.leadId.phone && <span className="flex items-center gap-1.5"><Phone size={14} /> {editingTask.leadId.phone}</span>}
+  {editingTask.leadId.city && <span className="flex items-center gap-1.5"><MapPin size={14} /> {editingTask.leadId.city}</span>}
+  </div>
+ )}
  </div>
  )}
 

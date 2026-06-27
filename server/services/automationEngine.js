@@ -309,14 +309,25 @@ class AutomationEngine {
   async ensureLeadExists(instagramId, username, source, priority = 'normal') {
     let lead = await Lead.findOne({ platformUserId: instagramId });
     if (!lead) {
-      lead = await Lead.create({
-        platformUserId: instagramId,
-        username: username && username !== 'unknown' ? username : `IG_User_${instagramId}`,
-        source,
-        status: 'new',
-        priority: priority
-      });
-    } else {
+      try {
+        lead = await Lead.create({
+          platformUserId: instagramId,
+          username: username && username !== 'unknown' ? username : `IG_User_${instagramId}`,
+          source,
+          status: 'new',
+          priority: priority
+        });
+        return lead;
+      } catch (error) {
+        if (error.code === 11000) {
+          lead = await Lead.findOne({ platformUserId: instagramId });
+        } else {
+          throw error;
+        }
+      }
+    }
+    
+    if (lead) {
       let updated = false;
       
       if (priority === 'hot' && lead.priority !== 'hot') {

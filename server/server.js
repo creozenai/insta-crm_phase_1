@@ -68,12 +68,17 @@ app.get('/api/analytics/dashboard', require('./middleware/authMiddleware').prote
       endLimit = new Date(endDate);
       endLimit.setHours(23, 59, 59, 999);
     } else if (period) {
-      const daysNum = parseInt(period, 10);
-      startLimit = new Date();
-      startLimit.setDate(startLimit.getDate() - daysNum + 1);
-      startLimit.setHours(0, 0, 0, 0);
-      endLimit = new Date();
-      endLimit.setHours(23, 59, 59, 999);
+      if (period === '24h') {
+        startLimit = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        endLimit = new Date();
+      } else {
+        const daysNum = parseInt(period, 10);
+        startLimit = new Date();
+        startLimit.setDate(startLimit.getDate() - daysNum + 1);
+        startLimit.setHours(0, 0, 0, 0);
+        endLimit = new Date();
+        endLimit.setHours(23, 59, 59, 999);
+      }
     }
 
     const dateQuery = {};
@@ -121,49 +126,85 @@ app.get('/api/analytics/dashboard', require('./middleware/authMiddleware').prote
     const chartStart = startLimit || new Date(new Date().setDate(new Date().getDate() - 6));
     if (!startLimit) chartStart.setHours(0,0,0,0);
     const chartEnd = endLimit || new Date();
-    
-    const diffTime = Math.abs(chartEnd - chartStart);
-    let daysToIterate = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (daysToIterate === 0) daysToIterate = 1;
-    if (daysToIterate > 365) daysToIterate = 365;
 
-    const msgsData = await Message.aggregate([
-      { $match: { createdAt: { $gte: chartStart, $lte: chartEnd }, direction: 'inbound' } },
-      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }
-    ]);
+    if (period === '24h') {
+      const msgsData = await Message.aggregate([
+        { $match: { createdAt: { $gte: chartStart, $lte: chartEnd }, direction: 'inbound' } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m-%d %H", date: "$createdAt" } }, count: { $sum: 1 } } }
+      ]);
 
-    const commentsData = await Comment.aggregate([
-      { $match: { createdAt: { $gte: chartStart, $lte: chartEnd }, direction: 'inbound' } },
-      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }
-    ]);
+      const commentsData = await Comment.aggregate([
+        { $match: { createdAt: { $gte: chartStart, $lte: chartEnd }, direction: 'inbound' } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m-%d %H", date: "$createdAt" } }, count: { $sum: 1 } } }
+      ]);
 
-    const leadsData = await Lead.aggregate([
-      { $match: { isPipelineLead: true, createdAt: { $gte: chartStart, $lte: chartEnd } } },
-      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }
-    ]);
+      const leadsData = await Lead.aggregate([
+        { $match: { isPipelineLead: true, createdAt: { $gte: chartStart, $lte: chartEnd } } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m-%d %H", date: "$createdAt" } }, count: { $sum: 1 } } }
+      ]);
 
-    const msgsMap = msgsData.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {});
-    const commentsMap = commentsData.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {});
-    const leadsMap = leadsData.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {});
+      const msgsMap = msgsData.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {});
+      const commentsMap = commentsData.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {});
+      const leadsMap = leadsData.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {});
 
-    for(let i = daysToIterate - 1; i >= 0; i--) {
-      const d = new Date(chartEnd);
-      d.setDate(d.getDate() - i);
-      
-      const dateStr = d.toISOString().split('T')[0];
-      
-      let label = days[d.getDay()];
-      if (daysToIterate > 14) {
-        label = `${d.getMonth()+1}/${d.getDate()}`;
+      for (let i = 23; i >= 0; i--) {
+        const d = new Date(chartEnd);
+        d.setHours(d.getHours() - i);
+        const label = `${d.getHours().toString().padStart(2, '0')}:00`;
+        const dateStr = d.toISOString().split(':')[0].replace('T', ' ');
+
+        chartData.push({
+          day: label,
+          fullDate: d.toISOString(),
+          messages: msgsMap[dateStr] || 0,
+          comments: commentsMap[dateStr] || 0,
+          leads: leadsMap[dateStr] || 0
+        });
       }
-      
-      chartData.push({
-        day: label,
-        fullDate: dateStr,
-        messages: msgsMap[dateStr] || 0,
-        comments: commentsMap[dateStr] || 0,
-        leads: leadsMap[dateStr] || 0
-      });
+    } else {
+      const diffTime = Math.abs(chartEnd - chartStart);
+      let daysToIterate = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (daysToIterate === 0) daysToIterate = 1;
+      if (daysToIterate > 365) daysToIterate = 365;
+
+      const msgsData = await Message.aggregate([
+        { $match: { createdAt: { $gte: chartStart, $lte: chartEnd }, direction: 'inbound' } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }
+      ]);
+
+      const commentsData = await Comment.aggregate([
+        { $match: { createdAt: { $gte: chartStart, $lte: chartEnd }, direction: 'inbound' } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }
+      ]);
+
+      const leadsData = await Lead.aggregate([
+        { $match: { isPipelineLead: true, createdAt: { $gte: chartStart, $lte: chartEnd } } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } }
+      ]);
+
+      const msgsMap = msgsData.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {});
+      const commentsMap = commentsData.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {});
+      const leadsMap = leadsData.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {});
+
+      for(let i = daysToIterate - 1; i >= 0; i--) {
+        const d = new Date(chartEnd);
+        d.setDate(d.getDate() - i);
+        
+        const dateStr = d.toISOString().split('T')[0];
+        
+        let label = days[d.getDay()];
+        if (daysToIterate > 14) {
+          label = `${d.getMonth()+1}/${d.getDate()}`;
+        }
+        
+        chartData.push({
+          day: label,
+          fullDate: dateStr,
+          messages: msgsMap[dateStr] || 0,
+          comments: commentsMap[dateStr] || 0,
+          leads: leadsMap[dateStr] || 0
+        });
+      }
     }
     
     res.json({
