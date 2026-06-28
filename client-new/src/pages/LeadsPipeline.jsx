@@ -27,7 +27,8 @@ import {
  Sparkles,
  Calendar,
  X,
- XCircle
+ XCircle,
+ PauseCircle
 } from 'lucide-react';
 import CustomSelect from '../components/ui/CustomSelect';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
@@ -487,6 +488,8 @@ export default function LeadsPipeline() {
   <Badge variant="primary" className="bg-purple-100 text-purple-700 border-purple-200"><Sparkles size={12} className="inline mr-1 -mt-0.5" /> Super</Badge>
   ) : lead.priority === 'hot' ? (
   <Badge variant="error"><Flame size={12} className="inline mr-1 -mt-0.5" /> Hot</Badge>
+  ) : lead.priority === 'on_hold' ? (
+  <Badge variant="warning" className="bg-amber-100 text-amber-700 border-amber-200"><PauseCircle size={12} className="inline mr-1 -mt-0.5" /> On Hold</Badge>
   ) : (
   <span className="text-[var(--color-text-light)] text-xs font-medium">Normal</span>
   )
@@ -759,8 +762,10 @@ export default function LeadsPipeline() {
             { value: "all", label: "All Priorities" },
             { value: "super", label: <span className="flex items-center gap-1.5"><Sparkles size={14} className="text-purple-600" /> Super Leads</span> },
             { value: "hot", label: <span className="flex items-center gap-1.5"><Flame size={14} className="text-[var(--color-status-error)]" /> Hot Leads</span> },
-            { value: "normal", label: <span className="flex items-center gap-1.5"><User size={14} className="text-[var(--color-text-muted)]" /> Normal Leads</span> }
+            { value: "on_hold", label: <span className="flex items-center gap-1.5"><PauseCircle size={14} className="text-amber-500" /> On Hold</span> },
+            { value: "normal", label: "Normal Leads" }
           ]}
+          className="min-w-[140px]"
         />
         {(statusFilters.length > 0 || priorityFilter !== 'all' || sourceFilter !== '' || postFilter !== '' || datePreset !== 'all' || sortBy !== 'updated_desc' || search !== '' || agentFilter !== '') && (
           <button
@@ -891,6 +896,8 @@ export default function LeadsPipeline() {
   <Sparkles size={15} className="text-purple-600 fill-purple-600 shrink-0" />
   ) : lead.priority === 'hot' ? (
   <Flame size={15} className="text-[var(--color-status-error)] fill-[var(--color-status-error)] shrink-0" />
+  ) : lead.priority === 'on_hold' ? (
+  <PauseCircle size={15} className="text-amber-500 fill-amber-500 shrink-0" />
   ) : null}
  </div>
 
@@ -1071,15 +1078,27 @@ export default function LeadsPipeline() {
         ]}
       />
     </div>
-    <div className="flex items-center justify-between mt-6 px-2">
-      <span className="text-sm font-semibold text-[var(--color-text-muted)] flex items-center gap-1.5">
-        <Sparkles size={16} className={newPriority === 'super' ? 'text-purple-600 fill-purple-600' : ''} />
-        Super Lead
-      </span>
-      <label className="pro-toggle">
-        <input type="checkbox" className="pro-checkbox" checked={newPriority === 'super'} onChange={(e) => setNewPriority(e.target.checked ? 'super' : 'normal')} />
-        <span className="pro-toggle-track"></span>
-      </label>
+    <div className="flex flex-col gap-2 mt-6 px-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-[var(--color-text-muted)] flex items-center gap-1.5">
+          <Sparkles size={16} className={newPriority === 'super' ? 'text-purple-600 fill-purple-600' : ''} />
+          Super Lead
+        </span>
+        <label className="pro-toggle">
+          <input type="checkbox" className="pro-checkbox" checked={newPriority === 'super'} onChange={(e) => setNewPriority(e.target.checked ? 'super' : 'normal')} />
+          <span className="pro-toggle-track"></span>
+        </label>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-[var(--color-text-muted)] flex items-center gap-1.5">
+          <PauseCircle size={16} className={newPriority === 'on_hold' ? 'text-amber-500 fill-amber-500' : ''} />
+          On Hold
+        </span>
+        <label className="pro-toggle">
+          <input type="checkbox" className="pro-checkbox" checked={newPriority === 'on_hold'} onChange={(e) => setNewPriority(e.target.checked ? 'on_hold' : 'normal')} />
+          <span className="pro-toggle-track"></span>
+        </label>
+      </div>
     </div>
   </div>
 

@@ -20,7 +20,8 @@ import {
  Copy,
  LayoutGrid,
  Sparkles,
- Eye
+ Eye,
+ PauseCircle
 } from 'lucide-react';
 import CustomSelect from '../ui/CustomSelect';
 import ConfirmationDialog from '../ui/ConfirmationDialog';
@@ -386,6 +387,8 @@ export default function LeadDetailModal({ leadId, onClose }) {
     <Sparkles size={16} className="text-purple-600 fill-purple-600" />
   ) : priority === 'hot' ? (
     <Flame size={16} className="text-[var(--color-status-error)] fill-[var(--color-status-error)]" />
+  ) : priority === 'on_hold' ? (
+    <PauseCircle size={16} className="text-amber-500 fill-amber-500" />
   ) : null}
  </h3>
  <p className="text-xs text-[var(--color-text-muted)] uppercase font-semibold tracking-wide">
@@ -406,16 +409,28 @@ export default function LeadDetailModal({ leadId, onClose }) {
 
  {/* Priority toggle */}
  {priority !== 'hot' && (
-   <div className="flex items-center justify-between">
-     <span className="text-sm font-semibold text-[var(--color-text-muted)] flex items-center gap-1.5">
-       <Sparkles size={16} className={priority === 'super' ? 'text-purple-600 fill-purple-600' : ''} />
-       Super Lead
-     </span>
-     <label className="pro-toggle">
-       <input type="checkbox" className="pro-checkbox" checked={priority === 'super'} onChange={(e) => setPriority(e.target.checked ? 'super' : 'normal')} />
-       <span className="pro-toggle-track"></span>
-     </label>
-   </div>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-[var(--color-text-muted)] flex items-center gap-1.5">
+          <Sparkles size={16} className={priority === 'super' ? 'text-purple-600 fill-purple-600' : ''} />
+          Super Lead
+        </span>
+        <label className="pro-toggle">
+          <input type="checkbox" className="pro-checkbox" checked={priority === 'super'} onChange={(e) => setPriority(e.target.checked ? 'super' : 'normal')} />
+          <span className="pro-toggle-track"></span>
+        </label>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-[var(--color-text-muted)] flex items-center gap-1.5">
+          <PauseCircle size={16} className={priority === 'on_hold' ? 'text-amber-500 fill-amber-500' : ''} />
+          On Hold
+        </span>
+        <label className="pro-toggle">
+          <input type="checkbox" className="pro-checkbox" checked={priority === 'on_hold'} onChange={(e) => setPriority(e.target.checked ? 'on_hold' : 'normal')} />
+          <span className="pro-toggle-track"></span>
+        </label>
+      </div>
+    </div>
  )}
 
  {/* Basic Info Fields */}
