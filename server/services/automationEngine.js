@@ -14,6 +14,35 @@ class AutomationEngine {
       
       let lead = await Lead.findOne({ platformUserId: eventData.senderId });
       
+      // --- GLOBAL PHONE NUMBER DETECTION ---
+      // If this is an inbound message and it contains a valid phone number, extract it immediately.
+      // This ensures that even if a user is stuck in a generic path (or not in one), their phone number
+      // is always captured and they are upgraded to a Hot Lead.
+      const isInboundDMOrComment = (eventType === 'dm' || eventType === 'comment') && eventData.text;
+      if (isInboundDMOrComment) {
+        const cleanText = eventData.text.replace(/[\s\-\.\(\)]/g, ''); 
+        const phoneMatch = cleanText.match(/(\+?\d{7,15})/);
+        
+        if (phoneMatch) {
+          eventData._extractedPhone = phoneMatch[1]; // Save for later steps
+          
+          if (lead) {
+            let needsSave = false;
+            if (!lead.phone) {
+              lead.phone = phoneMatch[1];
+              needsSave = true;
+              console.log(`[Automation Engine] Global phone extraction: saved ${lead.phone} for lead ${lead.username}`);
+            }
+            if (lead.priority !== 'super' && lead.priority !== 'hot') {
+              lead.priority = 'hot'; // Automatically upgrade to Hot Lead
+              needsSave = true;
+              console.log(`[Automation Engine] Lead ${lead.username} automatically upgraded to Hot Lead (phone detected)`);
+            }
+            if (needsSave) await lead.save();
+          }
+        }
+      }
+      
       // If the event is outbound (admin_replied_comment or dm_sent), we ONLY care about it 
       // if we are actively tracking a sequence. It should NEVER start a new sequence or hit global fallbacks.
       const isOutbound = eventType === 'admin_replied_comment' || eventType === 'dm_sent';
@@ -52,7 +81,32 @@ class AutomationEngine {
       // 2. If not advancing a sequence, and it's an inbound event, see if it triggers a NEW sequence
       // Skip if lead is already in an active path (they should stay parked until they meet the next step's condition)
       if (!isAdvancingSequence && !isOutbound && !(lead && lead.activePathId) && settings.leadConversionLogic === 'sequence' && settings.leadConversionRules) {
-        for (const path of settings.leadConversionRules) {
+        
+        // Sort rules so that specific conditions (like phone detection or keywords) are evaluated first.
+        // If specificity is the same, longer sequences take precedence.
+        const sortedRules = [...settings.leadConversionRules].sort((a, b) => {
+          const aFirst = a.sequence && a.sequence.length > 0 ? a.sequence[0] : null;
+          const bFirst = b.sequence && b.sequence.length > 0 ? b.sequence[0] : null;
+          
+          if (!aFirst && !bFirst) return 0;
+          if (!aFirst) return 1;
+          if (!bFirst) return -1;
+          
+          const getSpecificity = (step) => {
+            if (step.matchType === 'contains_phone') return 3;
+            if (step.keywords && step.keywords.trim() !== '') return 2;
+            return 1; // catch-all
+          };
+          
+          const aSpec = getSpecificity(aFirst);
+          const bSpec = getSpecificity(bFirst);
+          
+          if (aSpec !== bSpec) return bSpec - aSpec; // Higher specificity first
+          
+          return (b.sequence?.length || 0) - (a.sequence?.length || 0); // Longer sequence first
+        });
+
+        for (const path of sortedRules) {
           if (path.isActive === false) continue;
           
           if (path.sequence && path.sequence.length > 0) {
@@ -154,7 +208,11 @@ class AutomationEngine {
 
     if (isFinalStep) {
       console.log(`[Automation Engine] Path ${path.id} completed! Upgrading priority.`);
-      lead.priority = isHot ? 'hot' : 'normal';
+      if (isHot) {
+        lead.priority = 'hot';
+      } else if (lead.priority !== 'hot' && lead.priority !== 'super') {
+        lead.priority = 'normal';
+      }
       lead.activePathId = null; // Clear path so they can trigger new ones
       lead.activePathStepIndex = 0;
       await lead.save();
