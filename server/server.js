@@ -71,6 +71,9 @@ app.get('/api/analytics/dashboard', require('./middleware/authMiddleware').prote
       if (period === '24h') {
         startLimit = new Date(Date.now() - 24 * 60 * 60 * 1000);
         endLimit = new Date();
+      } else if (period === 'all') {
+        startLimit = null;
+        endLimit = new Date();
       } else {
         const daysNum = parseInt(period, 10);
         startLimit = new Date();
@@ -128,8 +131,16 @@ app.get('/api/analytics/dashboard', require('./middleware/authMiddleware').prote
     const chartData = [];
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     
-    const chartStart = startLimit || new Date(new Date().setDate(new Date().getDate() - 6));
-    if (!startLimit) chartStart.setHours(0,0,0,0);
+    let chartStart;
+    if (startLimit) {
+      chartStart = startLimit;
+    } else if (period === 'all') {
+      const oldestLead = await Lead.findOne().sort({ createdAt: 1 });
+      chartStart = oldestLead ? oldestLead.createdAt : new Date(new Date().setDate(new Date().getDate() - 30));
+    } else {
+      chartStart = new Date(new Date().setDate(new Date().getDate() - 6));
+    }
+    if (!startLimit && period !== 'all') chartStart.setHours(0,0,0,0);
     const chartEnd = endLimit || new Date();
 
     if (period === '24h') {

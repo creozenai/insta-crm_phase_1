@@ -392,7 +392,7 @@ class AutomationEngine {
           platformUserId: instagramId,
           username: username && username !== 'unknown' ? username : `IG_User_${instagramId}`,
           source,
-          status: 'new',
+          status: 'New',
           priority: priority
         });
         return lead;

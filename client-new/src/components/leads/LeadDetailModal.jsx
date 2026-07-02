@@ -708,7 +708,7 @@ export default function LeadDetailModal({ leadId, onClose }) {
          {(() => {
            const pipelineOrder = {
              'New': 1, 'Not Picking': 2, 'Contacted': 3, 'Following Up': 4, 'Payment Pending': 5, 'Won': 6, 'Lost': 6,
-             'Not Contacted': 2, 'Interested': 5, 'Rejected': 6, 'Wrong Number': 6
+             'Not Contacted': 2, 'Interested': 5, 'Rejected': 6
            };
            const currentStatusIndex = pipelineOrder[lead?.status] || 0;
 
