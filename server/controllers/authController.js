@@ -60,17 +60,6 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    // Check maintenance mode
-    const isMaintenanceMode = process.env.MAINTENANCE_MODE === 'true';
-    const allowedEmails = ['admin@gmail.com', 'agent@gmail.com'];
-    
-    if (isMaintenanceMode && !allowedEmails.includes(user.email.toLowerCase())) {
-      return res.status(503).json({ 
-        success: false, 
-        error: 'System is currently down for maintenance. Please try again later.' 
-      });
-    }
-
     // Check if password matches
     const isMatch = await user.matchPassword(password);
 
