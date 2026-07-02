@@ -54,7 +54,7 @@ import CRMRules from "./pages/CRMRules";
 import CRMTemplates from "./pages/CRMTemplates";
 import AdminAccountCreation from "./pages/AdminAccountCreation";
 import LeadsPipeline from "./pages/LeadsPipeline";
-import TasksPage from "./pages/TasksPage";
+
 
 // Protected CRM Route Wrapper
 const CRMProtectedRoute = ({ children, requireAdmin }) => {
@@ -214,8 +214,7 @@ function MainApp() {
         return "Settings";
       case "/leads":
         return "Leads Pipeline";
-      case "/tasks":
-        return "Tasks Manager";
+
       case "/rules":
         return "Rules & Templates";
       case "/dashboard":
@@ -240,14 +239,7 @@ function MainApp() {
             </CRMProtectedRoute>
           }
         />
-        <Route
-          path="tasks"
-          element={
-            <CRMProtectedRoute>
-              <TasksPage />
-            </CRMProtectedRoute>
-          }
-        />
+
         <Route
           path="rules"
           element={

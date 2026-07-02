@@ -1,5 +1,6 @@
 const express = require('express');
 const Task = require('../models/Task');
+const Lead = require('../models/Lead');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -102,6 +103,7 @@ router.put('/:id', async (req, res) => {
     const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true })
       .populate('assignedTo', 'name email')
       .populate('leadId', 'username phone city');
+      
     res.json(task);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update task' });

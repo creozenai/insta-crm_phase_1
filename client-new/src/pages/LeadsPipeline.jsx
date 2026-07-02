@@ -34,11 +34,15 @@ import ConfirmationDialog from '../components/ui/ConfirmationDialog';
 import toast from 'react-hot-toast';
 
 const COLUMNS = [
- { id: 'new', label: 'New Lead', color: 'border-blue-500' },
- { id: 'contacted', label: 'Contacted', color: 'border-yellow-500' },
- { id: 'qualified', label: 'Qualified', color: 'border-purple-500' },
- { id: 'converted', label: 'Converted', color: 'border-green-500' },
- { id: 'lost', label: 'Lost', color: 'border-red-500' }
+ { id: 'New', label: 'New Lead', color: 'border-blue-500' },
+ { id: 'Not Picking', label: 'Not Picking', color: 'border-yellow-400' },
+ { id: 'Contacted', label: 'Contacted', color: 'border-yellow-600' },
+ { id: 'Following Up', label: 'Following Up', color: 'border-purple-500' },
+ { id: 'Payment Pending', label: 'Payment Pending', color: 'border-orange-500' },
+ { id: 'Won', label: 'Won', color: 'border-green-500' },
+ { id: 'Lost', label: 'Lost', color: 'border-red-500' },
+ { id: 'On Hold', label: 'On Hold', color: 'border-gray-500' },
+ { id: 'Future City', label: 'Future City', color: 'border-cyan-500' }
 ];
 
 export default function LeadsPipeline() {
@@ -48,7 +52,7 @@ export default function LeadsPipeline() {
  const [loading, setLoading] = useState(true);
  const [search, setSearch] = useState('');
  const [priorityFilter, setPriorityFilter] = useState('all');
- const [statusFilters, setStatusFilters] = useState(['new']);
+ const [statusFilters, setStatusFilters] = useState(['New']);
  const [sourceFilter, setSourceFilter] = useState('');
  const [posts, setPosts] = useState([]);
  const [postsWithLeads, setPostsWithLeads] = useState([]);
@@ -91,7 +95,7 @@ export default function LeadsPipeline() {
  const [newEmail, setNewEmail] = useState('');
  const [newPhone, setNewPhone] = useState('');
  const [newCity, setNewCity] = useState('');
- const [newStatus, setNewStatus] = useState('new');
+ const [newStatus, setNewStatus] = useState('New');
  const [newPriority, setNewPriority] = useState('normal');
  const [newNotes, setNewNotes] = useState('');
  const [newTags, setNewTags] = useState('');
@@ -250,7 +254,28 @@ export default function LeadsPipeline() {
  }
  }, [token, search, priorityFilter, statusFilters, sortBy, sourceFilter, postFilter, assignedToMe, agentFilter, datePreset, customStartDate, customEndDate]);
 
- const handleUpdateStatus = async (leadId, newStatus) => {
+  const handleUpdateStatus = async (leadId, newStatus) => {
+    const leadToUpdate = leads.find(l => l._id === leadId);
+    if (!leadToUpdate) return;
+    
+    if (leadToUpdate.status === 'Won' || leadToUpdate.status === 'Lost' || leadToUpdate.status === 'Rejected') {
+      toast.error('Cannot modify a closed lead.');
+      return;
+    }
+
+    const pipelineOrder = {
+      'New': 1, 'Not Picking': 2, 'Contacted': 3, 'Following Up': 4, 'Payment Pending': 5, 'Won': 6, 'Lost': 6,
+      'Not Contacted': 2, 'Interested': 5, 'Rejected': 6
+    };
+    
+    const oldIndex = pipelineOrder[leadToUpdate.status] || 0;
+    const newIndex = pipelineOrder[newStatus] || 0;
+    
+    if (oldIndex > 0 && newIndex > 0 && newIndex < oldIndex) {
+      toast.error('Lead status progression must move forward.');
+      return;
+    }
+
  // Save original state for potential rollback
  const originalLeads = [...leads];
 
@@ -344,7 +369,7 @@ export default function LeadsPipeline() {
  setNewEmail('');
  setNewPhone('');
  setNewCity('');
- setNewStatus('new');
+ setNewStatus('New');
  setNewPriority('normal');
  setNewNotes('');
  setNewTags('');
@@ -456,10 +481,10 @@ export default function LeadsPipeline() {
  render: (lead) => {
  const column = COLUMNS.find(col => col.id === lead.status);
  let variant = 'default';
- if (lead.status === 'converted') variant = 'success';
- if (lead.status === 'qualified') variant = 'info';
- if (lead.status === 'contacted') variant = 'warning';
- if (lead.status === 'lost') variant = 'error';
+ if (lead.status === 'Won') variant = 'success';
+ if (lead.status === 'Following Up' || lead.status === 'Interested') variant = 'info';
+ if (lead.status === 'Not Contacted') variant = 'warning';
+ if (lead.status === 'Rejected') variant = 'error';
  return <Badge variant={variant}>{column?.label || lead.status}</Badge>;
  }
  },
@@ -534,7 +559,7 @@ export default function LeadsPipeline() {
  <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
  <input
  type="text"
- placeholder="Search leads by username or tag…"
+ placeholder="Search by name, username, phone, email, tags..."
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  className="w-full bg-[var(--color-bg-card)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl pl-10 pr-10 py-2.5 focus:outline-none focus:border-[var(--color-primary)] transition-colors text-sm"
@@ -1063,11 +1088,15 @@ export default function LeadsPipeline() {
         value={newStatus}
         onChange={(e) => setNewStatus(e.target.value)}
         options={[
-          { value: "new", label: "New" },
-          { value: "contacted", label: "Contacted" },
-          { value: "qualified", label: "Qualified" },
-          { value: "converted", label: "Converted" },
-          { value: "lost", label: "Lost" }
+          { value: "New", label: "New" },
+          { value: "Not Picking", label: "Not Picking" },
+          { value: "Contacted", label: "Contacted" },
+          { value: "Following Up", label: "Following Up" },
+          { value: "Payment Pending", label: "Payment Pending" },
+          { value: "Won", label: "Won" },
+          { value: "Lost", label: "Lost" },
+          { value: "On Hold", label: "On Hold" },
+          { value: "Future City", label: "Future City" }
         ]}
       />
     </div>

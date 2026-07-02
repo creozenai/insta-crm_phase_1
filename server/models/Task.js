@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const taskSchema = new mongoose.Schema({
   type: {
     type: String,
-    required: true,
     enum: ['follow_up', 'call', 'demo', 'close']
   },
   notes: {
@@ -16,8 +15,8 @@ const taskSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'completed'],
-    default: 'pending'
+    enum: ['Not Spoken', 'Not Picking', 'Spoken', 'Following Up', 'Pending Payment', 'Won', 'Lost', 'On Hold', 'Future City Lead', 'pending', 'completed'],
+    default: 'Not Spoken'
   },
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,

@@ -99,20 +99,6 @@ const Sidebar = ({ isCollapsed, onToggle, isMobileOpen, onMobileClose }) => {
  <NavItem to="/leads" icon={Users} label="Leads Pipeline" isCollapsed={isCollapsed} isMobileOpen={isMobileOpen} onMobileClose={onMobileClose} />
  </div>
 
- {/* GROUP: TOOLS */}
- <div className="flex flex-col gap-1">
- {(!isCollapsed || isMobileOpen) && (
- <div className="px-3 mb-2 text-xs font-bold tracking-wider text-[var(--color-text-light)] uppercase fade-in">
- Tools
- </div>
- )}
- 
- {/* <NavItem to="/messages" icon={MessageCircle} label="Messages" isCollapsed={isCollapsed} isMobileOpen={isMobileOpen} onMobileClose={onMobileClose} />
- <NavItem to="/" exact icon={MessageSquare} label="Comments" isCollapsed={isCollapsed} isMobileOpen={isMobileOpen} onMobileClose={onMobileClose} /> */}
- {isAuthenticated && (
- <NavItem to="/tasks" icon={Calendar} label="Tasks Manager" isCollapsed={isCollapsed} isMobileOpen={isMobileOpen} onMobileClose={onMobileClose} />
- )}
- </div>
 
  {/* GROUP: WORKSPACE */}
  {isAuthenticated && user?.role === 'admin' && (

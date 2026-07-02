@@ -89,15 +89,19 @@ app.get('/api/analytics/dashboard', require('./middleware/authMiddleware').prote
 
     const totalLeads = await Lead.countDocuments(leadQuery);
     const hotLeads = await Lead.countDocuments({ ...leadQuery, priority: 'hot' });
-    const wonLeads = await Lead.countDocuments({ ...leadQuery, status: 'converted' });
+    const wonLeads = await Lead.countDocuments({ ...leadQuery, status: 'Won' });
     const conversionRate = totalLeads > 0 ? ((wonLeads / totalLeads) * 100).toFixed(1) : 0;
     
     // Calculate distributions
-    const newCount = await Lead.countDocuments({ ...leadQuery, status: 'new' });
-    const contactedCount = await Lead.countDocuments({ ...leadQuery, status: 'contacted' });
-    const qualifiedCount = await Lead.countDocuments({ ...leadQuery, status: 'qualified' });
-    const convertedCount = await Lead.countDocuments({ ...leadQuery, status: 'converted' });
-    const lostCount = await Lead.countDocuments({ ...leadQuery, status: 'lost' });
+    const newCount = await Lead.countDocuments({ ...leadQuery, status: 'New' });
+    const notPickingCount = await Lead.countDocuments({ ...leadQuery, status: 'Not Picking' });
+    const contactedCount = await Lead.countDocuments({ ...leadQuery, status: 'Contacted' });
+    const followingUpCount = await Lead.countDocuments({ ...leadQuery, status: 'Following Up' });
+    const paymentPendingCount = await Lead.countDocuments({ ...leadQuery, status: 'Payment Pending' });
+    const wonCount = await Lead.countDocuments({ ...leadQuery, status: 'Won' });
+    const lostCount = await Lead.countDocuments({ ...leadQuery, status: 'Lost' });
+    const onHoldCount = await Lead.countDocuments({ ...leadQuery, status: 'On Hold' });
+    const futureCityCount = await Lead.countDocuments({ ...leadQuery, status: 'Future City' });
 
     // Calculate sources
     const dmCount = await Lead.countDocuments({ ...leadQuery, source: 'dm' });
@@ -215,7 +219,7 @@ app.get('/api/analytics/dashboard', require('./middleware/authMiddleware').prote
         total: totalLeads, 
         hot: hotLeads, 
         conversionRate, 
-        distribution: { new: newCount, contacted: contactedCount, qualified: qualifiedCount, converted: convertedCount, lost: lostCount }, 
+        distribution: { new: newCount, notPicking: notPickingCount, contacted: contactedCount, followingUp: followingUpCount, paymentPending: paymentPendingCount, won: wonCount, lost: lostCount, onHold: onHoldCount, futureCity: futureCityCount }, 
         sources: { dm: dmCount, comment: commentCount, manual: manualCount } 
       },
       tasks: { pending: pendingTasks },
@@ -256,7 +260,9 @@ app.get('/api/leads', require('./middleware/authMiddleware').protect, async (req
       query.$or = [
         { username: { $regex: req.query.search, $options: 'i' } },
         { name: { $regex: req.query.search, $options: 'i' } },
-        { email: { $regex: req.query.search, $options: 'i' } }
+        { email: { $regex: req.query.search, $options: 'i' } },
+        { phone: { $regex: req.query.search, $options: 'i' } },
+        { tags: { $regex: req.query.search, $options: 'i' } }
       ];
     }
     if (req.query.status) query.status = { $in: req.query.status.split(',') };
@@ -314,7 +320,30 @@ app.get('/api/leads', require('./middleware/authMiddleware').protect, async (req
 app.post('/api/leads', require('./middleware/authMiddleware').protect, async (req, res) => {
   const Lead = require('./models/Lead');
   try {
-    const leadData = { ...req.body, isPipelineLead: true };
+    const leadData = { 
+      ...req.body, 
+      isPipelineLead: true, 
+      status: req.body.status || 'New',
+      statusHistory: [{
+        status: req.body.status || 'New',
+        timestamp: new Date()
+      }]
+    };
+    
+    // Fix notes format: incoming from frontend might be a string
+    if (typeof leadData.notes === 'string') {
+      if (leadData.notes.trim()) {
+        leadData.notes = [{
+          text: leadData.notes.trim(),
+          status: leadData.status,
+          createdBy: req.user ? req.user._id : null,
+          createdAt: new Date()
+        }];
+      } else {
+        leadData.notes = [];
+      }
+    }
+
     const newLead = await Lead.create(leadData);
     res.json(newLead);
   } catch (err) {

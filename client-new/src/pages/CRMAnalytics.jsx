@@ -245,15 +245,31 @@ export default function CRMAnalytics() {
   const pct = leads.total > 0 ? (count / leads.total) * 100 : 0;
   
   let barColor = 'bg-blue-400';
-  if (stage === 'contacted') barColor = 'bg-blue-500';
-  if (stage === 'qualified') barColor = 'bg-blue-600';
-  if (stage === 'converted') barColor = 'bg-[var(--color-primary)]';
-  if (stage === 'lost') barColor = 'bg-slate-300';
+  if (stage === 'notPicking') barColor = 'bg-yellow-400';
+  if (stage === 'contacted') barColor = 'bg-yellow-600';
+  if (stage === 'followingUp') barColor = 'bg-purple-500';
+  if (stage === 'paymentPending') barColor = 'bg-orange-500';
+  if (stage === 'won') barColor = 'bg-green-500';
+  if (stage === 'rejected' || stage === 'lost') barColor = 'bg-red-500';
+  if (stage === 'onHold') barColor = 'bg-gray-500';
+  if (stage === 'futureCity') barColor = 'bg-cyan-500';
+  
+  const stageLabels = {
+    new: 'New Lead',
+    notPicking: 'Not Picking',
+    contacted: 'Contacted',
+    followingUp: 'Following Up',
+    paymentPending: 'Payment Pending',
+    won: 'Won',
+    lost: 'Lost',
+    onHold: 'On Hold',
+    futureCity: 'Future City'
+  };
 
   return (
   <div key={stage} className="space-y-1">
   <div className="flex items-center justify-between text-xs font-semibold">
-  <span className="capitalize text-[var(--color-text-main)]">{stage}</span>
+  <span className="capitalize text-[var(--color-text-main)]">{stageLabels[stage] || stage}</span>
   <span className="text-[var(--color-text-muted)]">{count} ({Math.round(pct)}%)</span>
   </div>
   <div className="w-full h-2.5 bg-[var(--color-bg-active)] rounded-full overflow-hidden">

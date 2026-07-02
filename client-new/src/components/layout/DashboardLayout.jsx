@@ -107,34 +107,6 @@ const DashboardLayout = ({ children, title }) => {
  </header>
 
  <main className="flex-1 overflow-y-auto relative bg-[var(--color-bg-app)] transition-colors duration-300">
- {showOverdueAlert && (
- <div className="bg-[var(--color-status-error-bg)] border-b border-[var(--color-status-error)]/30 px-5 py-3 flex items-center justify-between gap-4 fade-in sticky top-0 z-20">
- <div className="flex items-center gap-2.5 text-[var(--color-status-error)] text-xs font-semibold">
- <AlertTriangle size={16} className="shrink-0" />
- <span>
- Attention: You have <strong>{overdueCount}</strong> overdue follow-up tasks!
- </span>
- </div>
- <div className="flex items-center gap-3">
- <button
- onClick={() => navigate('/tasks')}
- className="bg-[var(--color-status-error)] text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600 transition-colors cursor-pointer"
- >
- Manage Tasks
- </button>
- <button
- onClick={() => {
- setShowOverdueAlert(false);
- sessionStorage.setItem('overdue_alert_dismissed', 'true');
- }}
- className="text-[var(--color-text-muted)] hover:text-black transition-colors cursor-pointer"
- >
- <X size={15} />
- </button>
- </div>
- </div>
- )}
-
  <div className="w-full max-w-[935px] mx-auto py-8 px-5">
  {children}
  </div>

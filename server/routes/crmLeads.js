@@ -1,5 +1,5 @@
 const express = require('express');
-const { getLeads, updateLeadStage } = require('../controllers/leadController');
+const { getLeads, updateLeadStage, addNote } = require('../controllers/leadController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -12,5 +12,8 @@ router.route('/')
 
 router.route('/:id')
   .put(updateLeadStage);
+
+router.route('/:id/notes')
+  .post(addNote);
 
 module.exports = router;

@@ -32,8 +32,8 @@ const leadSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['new', 'contacted', 'qualified', 'converted', 'lost'],
-    default: 'new'
+    enum: ['New', 'Not Picking', 'Contacted', 'Following Up', 'Payment Pending', 'Won', 'Lost', 'On Hold', 'Future City', 'Not Contacted', 'Interested', 'Rejected', 'Future City Lead', 'new', 'contacted', 'qualified', 'converted', 'lost'],
+    default: 'New'
   },
   priority: {
     type: String,
@@ -43,9 +43,16 @@ const leadSchema = new mongoose.Schema({
   tags: [{
     type: String
   }],
-  notes: {
-    type: String
-  },
+  notes: [{
+    text: String,
+    status: String,
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    createdAt: { type: Date, default: Date.now }
+  }],
+  statusHistory: [{
+    status: String,
+    timestamp: { type: Date, default: Date.now }
+  }],
   isPipelineLead: {
     type: Boolean,
     default: false

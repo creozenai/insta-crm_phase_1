@@ -41,9 +41,8 @@ export default function TasksPage() {
  const [visibleTasks, setVisibleTasks] = useState([]);
  
  // Filters
- const [statusFilters, setStatusFilters] = useState(['pending']);
+ const [statusFilters, setStatusFilters] = useState(['Not Spoken']);
  const [priorityFilters, setPriorityFilters] = useState([]);
- const [typeFilters, setTypeFilters] = useState([]);
  const [assigneeFilters, setAssigneeFilters] = useState([]);
  const [systemAgents, setSystemAgents] = useState([]);
  const [showAgentMenu, setShowAgentMenu] = useState(false);
@@ -110,7 +109,6 @@ export default function TasksPage() {
  const params = new URLSearchParams();
  if (statusFilters.length > 0) params.append('status', statusFilters.join(','));
  if (priorityFilters.length > 0) params.append('priority', priorityFilters.join(','));
- if (typeFilters.length > 0) params.append('type', typeFilters.join(','));
  if (assigneeFilters.length > 0 && user?.role === 'admin') params.append('assignees', assigneeFilters.join(','));
  if (dateFilter) params.append('dateRange', dateFilter);
  if (dateFilter === 'custom') {
@@ -140,7 +138,7 @@ export default function TasksPage() {
  if (token) {
  initData();
  }
- }, [token, statusFilters, priorityFilters, typeFilters, assigneeFilters, sortBy, dateFilter, customStartDate, customEndDate]);
+ }, [token, statusFilters, priorityFilters, assigneeFilters, sortBy, dateFilter, customStartDate, customEndDate]);
 
  const handleUpdateTask = async (e) => {
  e.preventDefault();
@@ -158,7 +156,6 @@ export default function TasksPage() {
  },
  body: JSON.stringify({
  status: editingTask.status,
- type: editingTask.type,
  dueAt: editingTask.dueAt,
  notes: editingTask.notes,
  priority: editingTask.priority,
@@ -259,7 +256,9 @@ export default function TasksPage() {
  },
  {
  label: 'Lead',
- render: (task) => <span className="font-semibold text-sm text-[var(--color-text-main)]">@{task.leadId?.username || 'Manual'}</span>
+  render: (task) => <span className="font-semibold text-sm text-[var(--color-text-main)]">
+  {task.leadId?.username ? `@${task.leadId.username}` : task.leadId?.name || '@'}
+  </span>
  },
  {
  label: 'Phone',
@@ -270,17 +269,8 @@ export default function TasksPage() {
  render: (task) => <span className="text-sm text-[var(--color-text-main)]">{task.leadId?.city || '-'}</span>
  },
  {
- label: 'Type',
- render: (task) => (
- <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
- task.type === 'close' ? 'bg-red-100 text-red-700' :
- task.type === 'demo' ? 'bg-purple-100 text-purple-700' :
- task.type === 'call' ? 'bg-yellow-100 text-yellow-700' :
- 'bg-blue-100 text-blue-700'
- }`}>
- {task.type.replace('_', ' ')}
- </span>
- )
+ label: 'Assigned Agent',
+ render: (task) => <span className="text-sm text-[var(--color-text-main)] font-medium">{task.assignedTo?.name || 'Unassigned'}</span>
  },
  {
  label: 'Priority',
@@ -307,8 +297,14 @@ export default function TasksPage() {
  }
  },
  {
- label: 'Status',
- render: (task) => <Badge variant={task.status === 'completed' ? 'success' : 'default'}>{task.status}</Badge>
+  label: 'Status',
+  render: (task) => {
+    let variant = 'default';
+    if (task.status === 'Won') variant = 'success';
+    if (task.status === 'Lost' || task.status === 'Rejected') variant = 'error';
+    if (task.status === 'Pending Payment') variant = 'warning';
+    return <Badge variant={variant}>{task.status}</Badge>;
+  }
  },
  {
  label: 'Actions',
@@ -495,10 +491,10 @@ export default function TasksPage() {
  <div className="relative" ref={filterMenuRef}>
  <button
  onClick={() => setShowFilterMenu(!showFilterMenu)}
- className={`bg-[var(--color-bg-card)] text-[var(--color-text-main)] border rounded-xl px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 transition-colors ${showFilterMenu || statusFilters.length > 0 || priorityFilters.length > 0 || typeFilters.length > 0 ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-[var(--color-border-subtle)] hover:border-[var(--color-border-focus)]'}`}
+ className={`bg-[var(--color-bg-card)] text-[var(--color-text-main)] border rounded-xl px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 transition-colors ${showFilterMenu || statusFilters.length > 0 || priorityFilters.length > 0 ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-[var(--color-border-subtle)] hover:border-[var(--color-border-focus)]'}`}
  >
  <Filter size={14} />
- Filters {(statusFilters.length + priorityFilters.length + typeFilters.length) > 0 && `(${statusFilters.length + priorityFilters.length + typeFilters.length})`}
+ Filters {(statusFilters.length + priorityFilters.length) > 0 && `(${statusFilters.length + priorityFilters.length})`}
  </button>
  {showFilterMenu && (
  <div className="absolute top-full mt-2 right-0 w-56 bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] rounded-xl z-50 py-3 flex flex-col fade-in max-h-[60vh] overflow-y-auto">
@@ -506,7 +502,7 @@ export default function TasksPage() {
  {/* Status */}
  <div className="px-4 py-2">
  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Status</p>
- {['pending', 'completed'].map(opt => (
+ {['Not Spoken', 'Not Picking', 'Spoken', 'Following Up', 'Pending Payment', 'Won', 'Lost', 'On Hold', 'Future City Lead'].map(opt => (
  <label key={opt} className="flex items-center gap-2 py-1 cursor-pointer text-sm">
  <Checkbox checked={statusFilters.includes(opt)} onChange={() => setStatusFilters(prev => prev.includes(opt) ? prev.filter(x => x !== opt) : [...prev, opt])} />
  <span className="capitalize text-[var(--color-text-main)]">{opt}</span>
@@ -527,22 +523,9 @@ export default function TasksPage() {
  ))}
  </div>
 
- <div className="h-px bg-[var(--color-border-subtle)] my-1" />
-
- {/* Type */}
- <div className="px-4 pt-2">
- <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Type</p>
- {['follow_up', 'call', 'demo', 'close'].map(opt => (
- <label key={opt} className="flex items-center gap-2 py-1 cursor-pointer text-sm">
- <Checkbox checked={typeFilters.includes(opt)} onChange={() => setTypeFilters(prev => prev.includes(opt) ? prev.filter(x => x !== opt) : [...prev, opt])} />
- <span className="capitalize text-[var(--color-text-main)]">{opt.replace('_', ' ')}</span>
- </label>
- ))}
- </div>
-
- {(statusFilters.length > 0 || priorityFilters.length > 0 || typeFilters.length > 0) && (
+ {(statusFilters.length > 0 || priorityFilters.length > 0) && (
  <button 
- onClick={() => { setStatusFilters([]); setPriorityFilters([]); setTypeFilters([]); }}
+ onClick={() => { setStatusFilters([]); setPriorityFilters([]); }}
  className="mt-3 pt-3 border-t border-[var(--color-border-subtle)] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] mx-4 text-left font-semibold"
  >
  Clear All
@@ -552,7 +535,7 @@ export default function TasksPage() {
  )}
  </div>
 
-  {(dateFilter !== '' || assigneeFilters.length > 0 || statusFilters.length > 0 || priorityFilters.length > 0 || typeFilters.length > 0 || sortBy !== 'due_asc' || searchQuery !== '') && (
+  {(dateFilter !== '' || assigneeFilters.length > 0 || statusFilters.length > 0 || priorityFilters.length > 0 || sortBy !== 'due_asc' || searchQuery !== '') && (
     <button
       onClick={() => {
         setSearchQuery('');
@@ -560,7 +543,6 @@ export default function TasksPage() {
         setAssigneeFilters([]);
         setStatusFilters([]);
         setPriorityFilters([]);
-        setTypeFilters([]);
         setSortBy('due_asc');
       }}
       className="text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors flex items-center gap-1.5 px-3 py-2 bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-focus)] rounded-xl h-[40px] shrink-0"
@@ -587,12 +569,12 @@ export default function TasksPage() {
  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
  {filteredTasks.map(task => {
  const now = new Date().getTime();
- const isOverdue = new Date(task.dueAt).getTime() < now && task.status === 'pending';
+ const isOverdue = new Date(task.dueAt).getTime() < now && task.status !== 'Won' && task.status !== 'Lost' && task.status !== 'On Hold';
  return (
  <div
  key={task._id}
  className={`card-panel p-5 bg-[var(--color-bg-card)] hover: transition-all flex flex-col justify-between ${
- task.status === 'completed' 
+ task.status === 'Won' 
  ? 'opacity-70 bg-[var(--color-bg-subtle)]/30' 
  : isOverdue ? 'border-red-400' : 'border-[var(--color-border-subtle)]'
  }`}
@@ -606,9 +588,9 @@ export default function TasksPage() {
   className="mt-1"
   />
  <div className="flex flex-col gap-1.5 min-w-0 flex-1">
- <span className="font-bold text-sm text-[var(--color-text-main)] truncate">
- @{task.leadId?.username || 'Manual Lead'}
- </span>
+  <span className="font-bold text-sm text-[var(--color-text-main)] truncate">
+  {task.leadId?.username ? `@${task.leadId.username}` : task.leadId?.name || '@'}
+  </span>
  {(task.leadId?.phone || task.leadId?.city) && (
  <div className="text-xs text-[var(--color-text-muted)] flex items-center gap-3">
  {task.leadId?.phone && <span className="flex items-center gap-1"><Phone size={12} /> {task.leadId.phone}</span>}
@@ -626,21 +608,21 @@ export default function TasksPage() {
  {task.priority || 'medium'}
  </span>
 
- <span className={`text-xs uppercase font-bold px-2 py-0.5 rounded tracking-wider ${
- task.type === 'close' ? 'bg-red-100 text-red-700' :
- task.type === 'demo' ? 'bg-purple-100 text-purple-700' :
- task.type === 'call' ? 'bg-yellow-100 text-yellow-700' :
- 'bg-blue-100 text-blue-700'
- }`}>
- {task.type.replace('_', ' ')}
- </span>
+  <span className={`text-xs uppercase font-bold px-2 py-0.5 rounded tracking-wider ${
+  task.status === 'Won' ? 'bg-green-100 text-green-700' :
+  task.status === 'Lost' || task.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+  task.status === 'Pending Payment' ? 'bg-orange-100 text-orange-700' :
+  'bg-blue-100 text-blue-700'
+  }`}>
+  {task.status}
+  </span>
  </div>
  </div>
  </div>
 
  {/* Notes / description */}
  <p className={`text-sm leading-snug mb-4 font-normal ${
- task.status === 'completed' ? 'line-through text-[var(--color-text-muted)]' : 'text-[var(--color-text-main)]'
+ task.status === 'Won' ? 'line-through text-[var(--color-text-muted)]' : 'text-[var(--color-text-main)]'
  }`}>
  {task.notes || 'No description provided.'}
  </p>
@@ -746,20 +728,7 @@ export default function TasksPage() {
  </div>
  )}
 
- <div className="space-y-1.5">
- <label className="block text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Task Type</label>
- <CustomSelect
- value={editingTask?.type || ''}
- onChange={(e) => setEditingTask({...editingTask, type: e.target.value})}
- options={[
- { value: "follow_up", label: "Follow Up" },
- { value: "call", label: "Phone Call" },
- { value: "demo", label: "Product Demo" },
- { value: "close", label: "Negotiate / Close" }
- ]}
- className="w-full"
- />
- </div>
+
  
   <div className="space-y-1.5">
   <label className="block text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Assign To</label>
@@ -779,21 +748,22 @@ export default function TasksPage() {
 
  <div className="space-y-1.5">
  <label className="block text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Status</label>
- <div className="flex gap-3">
- {['pending', 'completed'].map(s => (
- <label key={s} className="flex-1 flex items-center gap-2 cursor-pointer p-2 rounded-lg border border-[var(--color-border-subtle)] hover:border-[var(--color-primary)] transition-colors bg-[var(--color-bg-subtle)]">
- <input 
- type="radio" 
- name="editStatus" 
- value={s}
- checked={editingTask?.status === s}
- onChange={() => setEditingTask({...editingTask, status: s})}
- className="text-[var(--color-primary)] cursor-pointer"
+ <CustomSelect
+ value={editingTask?.status || 'Not Spoken'}
+ onChange={(e) => setEditingTask({...editingTask, status: e.target.value})}
+ options={[
+ { value: "Not Spoken", label: "Not Spoken" },
+ { value: "Not Picking", label: "Not Picking" },
+ { value: "Spoken", label: "Spoken" },
+ { value: "Following Up", label: "Following Up" },
+ { value: "Pending Payment", label: "Pending Payment" },
+ { value: "Won", label: "Won" },
+ { value: "Lost", label: "Lost" },
+ { value: "On Hold", label: "On Hold" },
+ { value: "Future City Lead", label: "Future City Lead" }
+ ]}
+ className="w-full"
  />
- <span className="text-xs font-medium text-[var(--color-text-main)] capitalize">{s}</span>
- </label>
- ))}
- </div>
  </div>
 
  <Input

@@ -33,9 +33,10 @@ export default function LeadDetailModal({ leadId, onClose }) {
  const [lead, setLead] = useState(null);
  const [timeline, setTimeline] = useState([]);
  const [agents, setAgents] = useState([]);
- const [tasks, setTasks] = useState([]);
  const [loading, setLoading] = useState(true);
  const [saving, setSaving] = useState(false);
+ const [addingNote, setAddingNote] = useState(false);
+ const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
 
  // Message fields
  const [replyText, setReplyText] = useState('');
@@ -45,10 +46,11 @@ export default function LeadDetailModal({ leadId, onClose }) {
  const timelineEndRef = React.useRef(null);
 
  // Edit fields
- const [status, setStatus] = useState('new');
+ const [status, setStatus] = useState('New');
  const [priority, setPriority] = useState('normal');
  const [assignedTo, setAssignedTo] = useState('');
- const [notes, setNotes] = useState('');
+ const [newNoteText, setNewNoteText] = useState('');
+ const [statusNoteText, setStatusNoteText] = useState('');
  const [tags, setTags] = useState([]);
  const [tagInput, setTagInput] = useState('');
  const [name, setName] = useState('');
@@ -58,19 +60,6 @@ export default function LeadDetailModal({ leadId, onClose }) {
  const [platform, setPlatform] = useState('other');
  const [otherPlatform, setOtherPlatform] = useState('');
  const [username, setUsername] = useState('');
-
- // Task creation state
- const [taskType, setTaskType] = useState('follow_up');
- const [taskDue, setTaskDue] = useState('');
- const [taskNotes, setTaskNotes] = useState('');
- const [taskPriority, setTaskPriority] = useState('medium');
- const [taskAssignedTo, setTaskAssignedTo] = useState('');
- const [addingTask, setAddingTask] = useState(false);
-
- // Confirmation state
- const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
- const [taskToDelete, setTaskToDelete] = useState(null);
- const [isDeletingTask, setIsDeletingTask] = useState(false);
 
  const scrollToBottom = () => {
  timelineEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -117,18 +106,12 @@ export default function LeadDetailModal({ leadId, onClose }) {
  });
  const agentsData = await agentsRes.json();
 
- // Fetch tasks for this lead
- const tasksRes = await fetch(`${API_URL}/api/tasks?leadId=${leadId}`, {
- headers: { 'Authorization': `Bearer ${token}` }
- });
- const tasksData = await tasksRes.json();
-
  if (leadRes.ok) {
  setLead(leadData);
  setStatus(leadData.status);
  setPriority(leadData.priority || 'normal');
  setAssignedTo(leadData.assignedTo?._id || leadData.assignedTo || '');
- setNotes(leadData.notes || '');
+ setNewNoteText(''); // reset note input
  setTags(leadData.tags || []);
  setName(leadData.name || '');
  setEmail(leadData.email || '');
@@ -152,10 +135,6 @@ export default function LeadDetailModal({ leadId, onClose }) {
  if (agentsRes.ok) {
  setAgents(agentsData);
  }
-
- if (tasksRes.ok) {
- setTasks(tasksData);
- }
  } catch (err) {
  console.error(err);
  } finally {
@@ -167,6 +146,15 @@ export default function LeadDetailModal({ leadId, onClose }) {
  fetchData();
  }
  }, [token, leadId]);
+
+ // Validate before saving
+ const handleSaveAttempt = () => {
+ if (status !== lead?.status && (!statusNoteText || !statusNoteText.trim())) {
+ toast.error('A status change note is mandatory.');
+ return;
+ }
+ setShowSaveConfirmation(true);
+ };
 
  // Handle saving details
  const handleSaveDetails = async () => {
@@ -182,7 +170,7 @@ export default function LeadDetailModal({ leadId, onClose }) {
  status,
  priority,
  assignedTo: assignedTo || null,
- notes,
+ newNote: status !== lead?.status ? statusNoteText : newNoteText,
  tags,
  name,
  email,
@@ -193,12 +181,56 @@ export default function LeadDetailModal({ leadId, onClose }) {
  })
  });
  if (res.ok) {
+ setStatusNoteText('');
+ const updatedLeadRes = await fetch(`${API_URL}/api/leads/${leadId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+ if (updatedLeadRes.ok) setLead(await updatedLeadRes.json());
+ 
+ const timelineRes = await fetch(`${API_URL}/api/leads/${leadId}/timeline`, { headers: { 'Authorization': `Bearer ${token}` } });
+ if (timelineRes.ok) {
+ const timelineData = await timelineRes.json();
+ setTimeline(timelineData.timeline);
+ }
+ 
  toast.success('Lead details saved successfully!');
  }
  } catch (err) {
  console.error(err);
  } finally {
  setSaving(false);
+ setShowSaveConfirmation(false);
+ }
+ };
+
+ // Handle adding just a note
+ const handleAddNote = async () => {
+ if (!newNoteText || !newNoteText.trim()) {
+ toast.error('Note text is required.');
+ return;
+ }
+ setAddingNote(true);
+ try {
+ const res = await fetch(`${API_URL}/api/leads/${leadId}/notes`, {
+ method: 'POST',
+ headers: {
+ 'Content-Type': 'application/json',
+ 'Authorization': `Bearer ${token}`
+ },
+ body: JSON.stringify({ newNote: newNoteText })
+ });
+ 
+ const data = await res.json();
+ if (res.ok && data.success) {
+ setLead(data.data); // Update lead data which includes the new note
+ setNewNoteText('');
+ toast.success('Note added successfully!');
+ } else {
+ toast.error(data.error || 'Failed to add note');
+ }
+ } catch (err) {
+ console.error(err);
+ toast.error('Failed to add note');
+ } finally {
+ setAddingNote(false);
  }
  };
 
@@ -251,106 +283,7 @@ export default function LeadDetailModal({ leadId, onClose }) {
  }
  };
 
- // Task helpers
- const handleAddTask = async (e) => {
- e.preventDefault();
- if (!taskDue) return;
- setAddingTask(true);
 
- try {
- const res = await fetch(`${API_URL}/api/tasks`, {
- method: 'POST',
- headers: {
- 'Content-Type': 'application/json',
- 'Authorization': `Bearer ${token}`
- },
- body: JSON.stringify({
- leadId,
- assignedTo: taskAssignedTo === 'unassigned' ? null : (taskAssignedTo || assignedTo || null),
- type: taskType,
- dueAt: taskDue,
- notes: taskNotes,
- priority: taskPriority
- })
- });
- const data = await res.json();
- if (res.ok) {
- setTasks([...tasks, data]);
- setTaskDue('');
- setTaskNotes('');
- setTaskType('follow_up');
- setTaskPriority('medium');
- }
- } catch (err) {
- console.error(err);
- } finally {
- setAddingTask(false);
- }
- };
-
- const handleToggleTask = async (task) => {
- const nextStatus = task.status === 'pending' ? 'completed' : 'pending';
- 
- // Save original state for potential rollback
- const originalTasks = [...tasks];
-
- // Optimistic Update: instantly update task status locally
- setTasks(prevTasks =>
- prevTasks.map(t => t._id === task._id ? { ...t, status: nextStatus, completedAt: nextStatus === 'completed' ? new Date() : null } : t)
- );
-
- try {
- const res = await fetch(`${API_URL}/api/tasks/${task._id}`, {
- method: 'PUT',
- headers: {
- 'Content-Type': 'application/json',
- 'Authorization': `Bearer ${token}`
- },
- body: JSON.stringify({ status: nextStatus })
- });
- const data = await res.json();
- if (res.ok) {
- setTasks(prevTasks => prevTasks.map(t => t._id === task._id ? data : t));
- } else {
- // Rollback
- setTasks(originalTasks);
- console.error('Failed to toggle task on server');
- }
- } catch (err) {
- console.error(err);
- // Rollback
- setTasks(originalTasks);
- }
- };
-
- const handleDeleteTask = (taskId) => {
- setTaskToDelete(taskId);
- setShowDeleteConfirm(true);
- };
-
- const confirmDeleteTask = async () => {
- if (!taskToDelete) return;
- setIsDeletingTask(true);
- try {
- const res = await fetch(`${API_URL}/api/tasks/${taskToDelete}`, {
- method: 'DELETE',
- headers: { 'Authorization': `Bearer ${token}` }
- });
- if (res.ok) {
- setTasks(tasks.filter(t => t._id !== taskToDelete));
- setShowDeleteConfirm(false);
- setTaskToDelete(null);
- toast.success('Task deleted');
- } else {
- toast.error('Failed to delete task');
- }
- } catch (err) {
- console.error(err);
- toast.error('Server error deleting task');
- } finally {
- setIsDeletingTask(false);
- }
- };
 
  if (loading) {
  return createPortal(
@@ -363,19 +296,21 @@ export default function LeadDetailModal({ leadId, onClose }) {
  );
  }
 
+ const isClosed = lead?.status === 'Won' || lead?.status === 'Lost' || lead?.status === 'Rejected';
+
  return createPortal(
  <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 fade-in" onClick={onClose}>
  {/* Container */}
- <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] w-full max-w-[1200px] h-full max-h-[85vh] flex flex-col rounded-xl overflow-hidden relative slide-up" onClick={(e) => e.stopPropagation()}>
+ <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] w-full max-w-[1200px] h-full max-h-[90vh] flex flex-col rounded-xl overflow-hidden relative slide-up" onClick={(e) => e.stopPropagation()}>
  {/* Header */}
  <div className="p-4 border-b border-[var(--color-border-subtle)] flex items-center justify-between bg-[var(--color-bg-subtle)] shrink-0">
  <div className="flex items-center gap-3">
  <div className="w-10 h-10 rounded-full bg-[var(--color-border-subtle)] flex items-center justify-center overflow-hidden">
  {lead?.profilePicUrl ? (
- <img src={lead.profilePicUrl} alt={lead.username} className="w-full h-full object-cover" />
+ <img src={lead.profilePicUrl} alt={lead.username || lead.name || 'Unknown'} className="w-full h-full object-cover" />
  ) : (
  <span className="font-bold text-sm text-[var(--color-text-muted)]">
- {lead?.username.slice(0, 2).toUpperCase()}
+ {(lead?.username || lead?.name || '??').slice(0, 2).toUpperCase()}
  </span>
  )}
  </div>
@@ -393,9 +328,24 @@ export default function LeadDetailModal({ leadId, onClose }) {
  </p>
  </div>
  </div>
+ <div className="flex items-center gap-4">
+ {isClosed && (
+ <span className="text-xs font-bold text-[var(--color-status-error)] bg-[var(--color-status-error)]/10 px-2.5 py-1 rounded-md border border-[var(--color-status-error)]/20">
+ Closed Lead
+ </span>
+ )}
+ <button
+ onClick={handleSaveAttempt}
+ disabled={saving}
+ className="btn-primary py-1.5 px-4 text-sm font-semibold shrink-0 rounded-lg flex items-center gap-2 shadow-sm"
+ >
+ {saving ? <Spinner size={16} /> : 'Save Details'}
+ </button>
+ <div className="w-px h-6 bg-[var(--color-border-subtle)] mx-1"></div>
  <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors">
  <X size={24} />
  </button>
+ </div>
  </div>
 
  {/* Modal content body */}
@@ -406,16 +356,16 @@ export default function LeadDetailModal({ leadId, onClose }) {
 
  {/* Priority toggle */}
  {priority !== 'hot' && (
-   <div className="flex items-center justify-between">
-     <span className="text-sm font-semibold text-[var(--color-text-muted)] flex items-center gap-1.5">
-       <Sparkles size={16} className={priority === 'super' ? 'text-purple-600 fill-purple-600' : ''} />
-       Super Lead
-     </span>
-     <label className="pro-toggle">
-       <input type="checkbox" className="pro-checkbox" checked={priority === 'super'} onChange={(e) => setPriority(e.target.checked ? 'super' : 'normal')} />
-       <span className="pro-toggle-track"></span>
-     </label>
-   </div>
+ <div className="flex items-center justify-between">
+ <span className="text-sm font-semibold text-[var(--color-text-muted)] flex items-center gap-1.5">
+ <Sparkles size={16} className={priority === 'super' ? 'text-purple-600 fill-purple-600' : ''} />
+ Super Lead
+ </span>
+ <label className="pro-toggle">
+ <input type="checkbox" className="pro-checkbox" checked={priority === 'super'} onChange={(e) => setPriority(e.target.checked ? 'super' : 'normal')} />
+ <span className="pro-toggle-track"></span>
+ </label>
+ </div>
  )}
 
  {/* Basic Info Fields */}
@@ -430,24 +380,6 @@ export default function LeadDetailModal({ leadId, onClose }) {
  />
  </div>
 
- {/* Assigned to agent select */}
- {user?.role === 'admin' && (
- <div className="space-y-1.5">
- <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Assigned Agent</label>
- <CustomSelect
- value={assignedTo}
- onChange={(e) => setAssignedTo(e.target.value)}
- options={[
- { value: "", label: "Unassigned" },
- ...(user ? [{ value: user.id || user._id, label: "Assign to Me" }] : []),
- ...agents
- .filter(a => String(a._id) !== String(user?.id || user?._id))
- .map(a => ({ value: a._id, label: `${a.name} (${a.role})` }))
- ]}
- className="w-full"
- />
- </div>
- )}
  <div className="space-y-1.5">
  <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Name</label>
  <input
@@ -501,24 +433,6 @@ export default function LeadDetailModal({ leadId, onClose }) {
  </div>
  </div>
 
- {/* Status select */}
- <div className="space-y-1.5">
- <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Pipeline Stage</label>
- <CustomSelect
- value={status}
- onChange={(e) => setStatus(e.target.value)}
- options={[
- { value: "new", label: "New Lead" },
- { value: "contacted", label: "Contacted" },
- { value: "qualified", label: "Qualified" },
- { value: "converted", label: "Converted" },
- { value: "lost", label: "Lost" }
- ]}
- className="w-full"
- />
- </div>
-
-
  {/* Tags input */}
  <div className="space-y-2">
  <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider flex items-center gap-1">
@@ -541,27 +455,6 @@ export default function LeadDetailModal({ leadId, onClose }) {
  ))}
  </div>
  </div>
-
- {/* Notes */}
- <div className="space-y-1.5 flex-1 flex flex-col min-h-[120px]">
- <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider flex items-center gap-1">
- <Clipboard size={13} /> Notes
- </label>
- <textarea
- placeholder="Type interaction notes..."
- value={notes}
- onChange={(e) => setNotes(e.target.value)}
- className="w-full flex-1 bg-[var(--color-bg-subtle)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl px-4 py-2.5 focus:outline-none focus:border-[var(--color-primary)] text-sm resize-none"
- />
- </div>
-
- <button
- onClick={handleSaveDetails}
- disabled={saving}
- className="btn-primary w-full py-2.5 text-sm font-semibold shrink-0"
- >
- {saving ? <Spinner size={16} /> : 'Save Details'}
- </button>
  </div>
 
  {/* Right panel: Timeline & Tasks */}
@@ -715,7 +608,7 @@ export default function LeadDetailModal({ leadId, onClose }) {
  <div ref={timelineEndRef} />
  </div>
 
- {/* Message Input (Commented out as advance access is not yet available) */}
+ {/* Message Input */}
  {false && lead?.platformUserId && (
  <div className="p-4 bg-[var(--color-bg-card)] border-t border-[var(--color-border-subtle)] shrink-0">
  <div className="flex gap-3 border border-[var(--color-border-subtle)] rounded-full px-4 py-2 bg-[var(--color-bg-card)] items-center transition-colors duration-300">
@@ -781,167 +674,156 @@ export default function LeadDetailModal({ leadId, onClose }) {
  </div>
  </div>
  )}
- </div>
-
- {/* Task tracking sidebar */}
- {(user?.role === 'admin' || (user?.role === 'agent' && assignedTo && String(assignedTo) === String(user?.id || user?._id))) && (
- <div className="w-full md:w-[320px] p-5 flex flex-col gap-4 overflow-y-auto bg-[var(--color-bg-card)] shrink-0 min-h-[300px] md:min-h-0">
- <h4 className="font-bold text-xs text-[var(--color-text-muted)] uppercase tracking-wider border-b border-[var(--color-border-subtle)] pb-2 flex items-center gap-1.5 shrink-0">
- <Calendar size={13} /> Follow-Up Tasks
- </h4>
-
- {/* New task form */}
- <form onSubmit={handleAddTask} className="p-3 bg-[var(--color-bg-subtle)] border border-[var(--color-border-subtle)] rounded-xl space-y-3 shrink-0">
- <div className="grid grid-cols-2 gap-2">
- <div className="space-y-1">
- <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Type</label>
- <CustomSelect
- value={taskType}
- onChange={(e) => setTaskType(e.target.value)}
- options={[
- { value: "follow_up", label: "Follow Up" },
- { value: "call", label: "Call" },
- { value: "demo", label: "Demo" },
- { value: "close", label: "Close" }
- ]}
- className="w-full"
- />
- </div>
-
- <div className="space-y-1">
- <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Due Date</label>
- <input
- type="date"
- value={taskDue}
- onChange={(e) => setTaskDue(e.target.value)}
- className="w-full bg-[var(--color-bg-card)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl px-4 py-2.5 focus:outline-none focus:border-[var(--color-primary)] text-sm"
- required
- />
- </div>
- </div>
-
- <div className="grid grid-cols-2 gap-2">
- <div className="space-y-1">
- <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Priority</label>
- <CustomSelect
- value={taskPriority}
- onChange={(e) => setTaskPriority(e.target.value)}
- options={[
- { value: "low", label: "Low" },
- { value: "medium", label: "Medium" },
- { value: "high", label: "High" }
- ]}
- className="w-full"
- />
- </div>
-
- {user?.role === 'admin' && (
- <div className="space-y-1">
-  <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Assign To</label>
-  <CustomSelect
-  value={taskAssignedTo || assignedTo || 'unassigned'}
-  onChange={(e) => setTaskAssignedTo(e.target.value)}
-  options={[
-  { value: "unassigned", label: "Unassigned" },
-  ...(user ? [{ value: user.id || user._id, label: "Assign to Me" }] : []),
-  ...agents
-  .filter(a => String(a._id) !== String(user?.id || user?._id))
-  .map(a => ({ value: a._id, label: `${a.name} (${a.role})` }))
-  ]}
-  className="w-full"
-  />
   </div>
- )}
- </div>
 
- <div className="space-y-1">
- <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Task notes</label>
- <input
- type="text"
- placeholder="e.g. Discuss custom pricing"
- value={taskNotes}
- onChange={(e) => setTaskNotes(e.target.value)}
- className="w-full bg-[var(--color-bg-card)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl px-4 py-2.5 focus:outline-none focus:border-[var(--color-primary)] text-sm"
- />
- </div>
+   {/* Column 3: Lead Actions & Notes History */}
+   <div className="w-full md:w-[350px] flex flex-col min-h-[400px] md:min-h-0 bg-[var(--color-bg-card)] border-t md:border-t-0 md:border-l border-[var(--color-border-subtle)]">
+     <div className="p-4 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] font-bold text-xs text-[var(--color-text-muted)] uppercase tracking-wider flex items-center justify-between shrink-0">
+       <span>Management & Notes</span>
+     </div>
+     
+     <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
+       {/* Assigned to agent select */}
+       {user?.role === 'admin' && (
+         <div className="space-y-1.5">
+           <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Assigned Agent</label>
+           <CustomSelect
+             value={assignedTo}
+             onChange={(e) => setAssignedTo(e.target.value)}
+             options={[
+               { value: "", label: "Unassigned" },
+               ...(user ? [{ value: user.id || user._id, label: "Assign to Me" }] : []),
+               ...agents
+                 .filter(a => String(a._id) !== String(user?.id || user?._id))
+                 .map(a => ({ value: a._id, label: `${a.name} (${a.role})` }))
+             ]}
+             className="w-full"
+           />
+         </div>
+       )}
 
- <button
- type="submit"
- disabled={addingTask}
- className="btn-primary w-full py-1.5 text-xs font-semibold"
- >
- <Plus size={12} /> Add Task
- </button>
- </form>
+       {/* Status select */}
+       <div className="space-y-1.5">
+         <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Pipeline Stage</label>
+         {(() => {
+           const pipelineOrder = {
+             'New': 1, 'Not Picking': 2, 'Contacted': 3, 'Following Up': 4, 'Payment Pending': 5, 'Won': 6, 'Lost': 6,
+             'Not Contacted': 2, 'Interested': 5, 'Rejected': 6
+           };
+           const currentStatusIndex = pipelineOrder[lead?.status] || 0;
 
- {/* Tasks List */}
- <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5">
- {tasks.length === 0 ? (
- <div className="text-center py-6 text-xs text-[var(--color-text-light)] font-medium">
- No scheduled tasks.
- </div>
- ) : (
- tasks.map(task => (
- <div 
- key={task._id}
- className={`p-3 border rounded-xl flex items-start gap-2.5 transition-all ${
- task.status === 'completed' 
- ? 'border-[var(--color-border-subtle)] bg-[var(--color-bg-subtle)]/50 opacity-70' 
- : 'border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] hover:border-[var(--color-border-focus)]'
- }`}
- >
+           const allStatusOptions = [
+             { value: "New", label: "New" },
+             { value: "Not Picking", label: "Not Picking" },
+             { value: "Contacted", label: "Contacted" },
+             { value: "Following Up", label: "Following Up" },
+             { value: "Payment Pending", label: "Payment Pending" },
+             { value: "Won", label: "Won" },
+             { value: "Lost", label: "Lost" },
+             { value: "On Hold", label: "On Hold" },
+             { value: "Future City", label: "Future City" }
+           ];
 
+           let validOptions = allStatusOptions.filter(opt => {
+             const optIndex = pipelineOrder[opt.value] || 0;
+             if (optIndex === 0) return true;
+             if (!lead) return true;
+             if (currentStatusIndex === 0) return optIndex >= 2;
+             return optIndex >= currentStatusIndex;
+           });
 
- <div className="flex-1 min-w-0">
- <div className={`text-xs font-semibold flex items-center justify-between gap-1.5 ${task.status === 'completed' ? 'line-through text-[var(--color-text-muted)]' : 'text-[var(--color-text-main)]'}`}>
- <span className="capitalize">{task.type.replace('_', ' ')}</span>
- <span className={`text-xs uppercase font-bold px-1.5 py-0.5 rounded ${
- task.priority === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300' :
- task.priority === 'low' ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' :
- 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
- }`}>
- {task.priority || 'medium'}
- </span>
- </div>
- {task.notes && (
- <p className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate leading-tight">
- {task.notes}
- </p>
- )}
- <span className="text-xs text-[var(--color-text-light)] font-semibold mt-1 block uppercase">
- Due: {new Date(task.dueAt).toLocaleDateString([], {month: 'short', day: 'numeric'})}
- </span>
- </div>
+           if (lead?.status && !validOptions.find(o => o.value === lead.status)) {
+             validOptions.unshift({ value: lead.status, label: lead.status });
+           }
 
- <button 
- onClick={() => handleDeleteTask(task._id)}
- className="text-[var(--color-text-light)] hover:text-[var(--color-status-error)] transition-colors shrink-0"
- >
- <Trash2 size={13} />
- </button>
- </div>
- ))
- )}
- </div>
- </div>
- )}
- </div>
- </div>
- </div>
- 
- <ConfirmationDialog 
- isOpen={showDeleteConfirm}
- onClose={() => {
- setShowDeleteConfirm(false);
- setTaskToDelete(null);
- }}
- onConfirm={confirmDeleteTask}
- title="Delete Task"
- message="Are you sure you want to permanently delete this task?"
- confirmText="Delete Task"
- isLoading={isDeletingTask}
- />
- </div>,
- document.body
- );
+           return (
+             <CustomSelect
+               value={status}
+               onChange={(e) => setStatus(e.target.value)}
+               options={validOptions}
+               className="w-full"
+             />
+           );
+         })()}
+       </div>
+
+       {status !== lead?.status && (
+         <div className="space-y-1.5 mt-3 fade-in">
+           <label className="block text-xs font-bold text-[var(--color-status-error)] uppercase tracking-wider flex items-center gap-1">
+             <Clipboard size={13} /> Mandatory Status Note *
+           </label>
+           <textarea
+             placeholder={`Reason for changing status to ${status}...`}
+             value={statusNoteText}
+             onChange={(e) => setStatusNoteText(e.target.value)}
+             className="w-full bg-[var(--color-status-error)]/5 text-[var(--color-text-main)] border border-[var(--color-status-error)]/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-[var(--color-status-error)] text-sm resize-none min-h-[60px]"
+           />
+         </div>
+       )}
+
+       {/* Notes Input */}
+       <div className="space-y-1.5 flex-1 flex flex-col min-h-[120px] mt-4">
+         <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider flex items-center gap-1">
+           <Clipboard size={13} /> Add Note
+         </label>
+         <textarea
+           placeholder="Type interaction notes..."
+           value={newNoteText}
+           onChange={(e) => setNewNoteText(e.target.value)}
+           className="w-full flex-1 bg-[var(--color-bg-subtle)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] rounded-xl px-4 py-2.5 focus:outline-none focus:border-[var(--color-primary)] text-sm resize-none min-h-[80px]"
+         />
+         <div className="flex justify-end pt-1">
+           <button
+             onClick={handleAddNote}
+             disabled={addingNote || !newNoteText.trim()}
+             className="bg-[var(--color-primary)] text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--color-primary-dark)] transition-colors disabled:opacity-50 flex items-center gap-2"
+           >
+             {addingNote ? <Spinner size={12} /> : 'Save Note'}
+           </button>
+         </div>
+       </div>
+       
+       {/* Notes History */}
+       <div className="space-y-3 pt-4 border-t border-[var(--color-border-subtle)] mt-2">
+         <h4 className="font-bold text-sm text-[var(--color-text-main)] uppercase tracking-wide">Notes History</h4>
+         {(!lead?.notes || lead.notes.length === 0) ? (
+           <p className="text-xs text-[var(--color-text-muted)] italic text-center py-4">No notes recorded.</p>
+         ) : (
+           <div className="space-y-3">
+             {lead.notes.map((note, idx) => (
+               <div key={idx} className="bg-[var(--color-bg-subtle)] p-3 rounded-lg border border-[var(--color-border-subtle)]">
+                 <div className="flex justify-between items-start mb-1.5 gap-2">
+                   <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded truncate shrink-0">
+                     {note.status || 'Unknown'}
+                   </span>
+                   <span className="text-[10px] font-semibold text-[var(--color-text-muted)] whitespace-nowrap">
+                     {new Date(note.createdAt).toLocaleDateString()} {new Date(note.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                   </span>
+                 </div>
+                 <p className="text-sm text-[var(--color-text-main)] whitespace-pre-wrap">{note.text}</p>
+               </div>
+             ))}
+           </div>
+         )}
+       </div>
+     </div>
+   </div>
+   </div>
+   </div>
+   </div>
+
+   <ConfirmationDialog
+     isOpen={showSaveConfirmation}
+     onClose={() => setShowSaveConfirmation(false)}
+     onConfirm={handleSaveDetails}
+     title="Save Lead Details"
+     message={`Are you sure you want to save these details for @${lead?.username || lead?.name || 'this lead'}?`}
+     confirmText="Save Details"
+     cancelText="Cancel"
+     isDestructive={false}
+     isLoading={saving}
+   />
+   </div>,
+  document.body
+  );
 }
