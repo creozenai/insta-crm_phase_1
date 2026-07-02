@@ -336,6 +336,7 @@ app.post('/api/leads', require('./middleware/authMiddleware').protect, async (re
       ...req.body, 
       isPipelineLead: true, 
       status: req.body.status || 'New',
+      priority: req.body.priority || 'hot',
       statusHistory: [{
         status: req.body.status || 'New',
         timestamp: new Date()

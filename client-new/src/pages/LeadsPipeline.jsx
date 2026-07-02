@@ -97,7 +97,7 @@ export default function LeadsPipeline() {
  const [newPhone, setNewPhone] = useState('');
  const [newCity, setNewCity] = useState('');
  const [newStatus, setNewStatus] = useState('New');
- const [newPriority, setNewPriority] = useState('normal');
+ const [newPriority, setNewPriority] = useState('hot');
  const [newNotes, setNewNotes] = useState('');
  const [newTags, setNewTags] = useState('');
  const [addError, setAddError] = useState(null);
@@ -371,7 +371,7 @@ export default function LeadsPipeline() {
  setNewPhone('');
  setNewCity('');
  setNewStatus('New');
- setNewPriority('normal');
+ setNewPriority('hot');
  setNewNotes('');
  setNewTags('');
  fetchLeads();
@@ -1108,7 +1108,7 @@ export default function LeadsPipeline() {
         Super Lead
       </span>
       <label className="pro-toggle">
-        <input type="checkbox" className="pro-checkbox" checked={newPriority === 'super'} onChange={(e) => setNewPriority(e.target.checked ? 'super' : 'normal')} />
+        <input type="checkbox" className="pro-checkbox" checked={newPriority === 'super'} onChange={(e) => setNewPriority(e.target.checked ? 'super' : 'hot')} />
         <span className="pro-toggle-track"></span>
       </label>
     </div>

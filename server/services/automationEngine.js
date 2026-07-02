@@ -287,9 +287,7 @@ class AutomationEngine {
     const senderId = eventData.senderId;
 
     if (eventType === 'comment') {
-      const shouldReply = settings.unmatchedCommentFallback === 'global' || settings.leadConversionLogic === 'immediate';
-      
-      if (shouldReply) {
+      if (true) {
         if (settings.autoCommentReply && settings.commentReplyText) {
           const resolvedText = settings.commentReplyText.replace(/{username}/g, `@${eventData.username}`);
           await this.sendMetaCommentReply(eventData.commentId, resolvedText, senderId, eventData.timestamp);
@@ -302,9 +300,7 @@ class AutomationEngine {
         }
       }
     } else if (eventType === 'dm') {
-      const shouldReply = settings.unmatchedDmFallback === 'global' || settings.leadConversionLogic === 'immediate';
-      
-      if (shouldReply && settings.autoDMReply && settings.dmReplyText) {
+      if (settings.autoDMReply && settings.dmReplyText) {
         const resolvedText = settings.dmReplyText.replace(/{username}/g, `@${eventData.username}`);
         const mid = await this.sendMetaDirectMessage(senderId, null, resolvedText);
         await this.logAutomatedMessage(senderId, resolvedText, mid, eventData.timestamp);
