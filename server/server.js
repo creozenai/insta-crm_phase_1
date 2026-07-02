@@ -102,6 +102,7 @@ app.get('/api/analytics/dashboard', require('./middleware/authMiddleware').prote
     const lostCount = await Lead.countDocuments({ ...leadQuery, status: 'Lost' });
     const onHoldCount = await Lead.countDocuments({ ...leadQuery, status: 'On Hold' });
     const futureCityCount = await Lead.countDocuments({ ...leadQuery, status: 'Future City' });
+    const wrongNumberCount = await Lead.countDocuments({ ...leadQuery, status: 'Wrong Number' });
 
     // Calculate sources
     const dmCount = await Lead.countDocuments({ ...leadQuery, source: 'dm' });
@@ -219,7 +220,7 @@ app.get('/api/analytics/dashboard', require('./middleware/authMiddleware').prote
         total: totalLeads, 
         hot: hotLeads, 
         conversionRate, 
-        distribution: { new: newCount, notPicking: notPickingCount, contacted: contactedCount, followingUp: followingUpCount, paymentPending: paymentPendingCount, won: wonCount, lost: lostCount, onHold: onHoldCount, futureCity: futureCityCount }, 
+        distribution: { new: newCount, notPicking: notPickingCount, contacted: contactedCount, followingUp: followingUpCount, paymentPending: paymentPendingCount, won: wonCount, lost: lostCount, onHold: onHoldCount, futureCity: futureCityCount, wrongNumber: wrongNumberCount }, 
         sources: { dm: dmCount, comment: commentCount, manual: manualCount } 
       },
       tasks: { pending: pendingTasks },

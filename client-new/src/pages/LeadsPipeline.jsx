@@ -42,7 +42,8 @@ const COLUMNS = [
  { id: 'Won', label: 'Won', color: 'border-green-500' },
  { id: 'Lost', label: 'Lost', color: 'border-red-500' },
  { id: 'On Hold', label: 'On Hold', color: 'border-gray-500' },
- { id: 'Future City', label: 'Future City', color: 'border-cyan-500' }
+ { id: 'Future City', label: 'Future City', color: 'border-cyan-500' },
+ { id: 'Wrong Number', label: 'Wrong Number', color: 'border-red-700' }
 ];
 
 export default function LeadsPipeline() {
@@ -1096,7 +1097,8 @@ export default function LeadsPipeline() {
           { value: "Won", label: "Won" },
           { value: "Lost", label: "Lost" },
           { value: "On Hold", label: "On Hold" },
-          { value: "Future City", label: "Future City" }
+          { value: "Future City", label: "Future City" },
+          { value: "Wrong Number", label: "Wrong Number" }
         ]}
       />
     </div>
