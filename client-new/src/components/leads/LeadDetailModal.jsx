@@ -708,7 +708,7 @@ export default function LeadDetailModal({ leadId, onClose }) {
          {(() => {
            const pipelineOrder = {
              'New': 1, 'Not Picking': 2, 'Contacted': 3, 'Following Up': 4, 'Payment Pending': 5, 'Won': 6, 'Lost': 6,
-             'Not Contacted': 2, 'Interested': 5, 'Rejected': 6
+             'Not Contacted': 2, 'Interested': 5, 'Rejected': 6, 'Wrong Number': 6
            };
            const currentStatusIndex = pipelineOrder[lead?.status] || 0;
 
@@ -721,7 +721,8 @@ export default function LeadDetailModal({ leadId, onClose }) {
              { value: "Won", label: "Won" },
              { value: "Lost", label: "Lost" },
              { value: "On Hold", label: "On Hold" },
-             { value: "Future City", label: "Future City" }
+             { value: "Future City", label: "Future City" },
+             { value: "Wrong Number", label: "Wrong Number" }
            ];
 
            let validOptions = allStatusOptions.filter(opt => {

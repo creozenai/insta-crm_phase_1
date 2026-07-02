@@ -1,15 +1,23 @@
-const mongoose = require('mongoose');
 require('dotenv').config();
+const mongoose = require('mongoose');
+const Lead = require('./models/Lead');
 
-mongoose.connect(process.env.MONGODB_URI).then(async () => {
-  const Lead = require('./models/Lead');
-  const lead = await Lead.findById("6a3cea7ceaca3527bf33088b");
-  console.log("Lead assigned to:", lead.assignedTo);
+async function fixAll() {
+  await mongoose.connect(process.env.MONGODB_URI);
   
-  const lead2 = await Lead.findOne({ username: 'nandhukishore_dreams' });
-  if (lead2) {
-    console.log("Lead nandhukishore_dreams id:", lead2._id, "assignedTo:", lead2.assignedTo);
-  }
+  const map = {
+    'contacted': 'Contacted',
+    'qualified': 'New',
+    'converted': 'Won',
+    'lost': 'Lost'
+  };
 
+  for (const [oldStatus, newStatus] of Object.entries(map)) {
+    const result = await Lead.updateMany({ status: oldStatus }, { $set: { status: newStatus } });
+    console.log(`Updated ${result.modifiedCount} leads from '${oldStatus}' to '${newStatus}'`);
+  }
+  
   process.exit(0);
-});
+}
+
+fixAll();
