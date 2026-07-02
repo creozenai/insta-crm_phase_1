@@ -147,7 +147,7 @@ export default function CRMAnalytics() {
   setPeriodType('custom');
   } else {
   setPeriodType('preset');
-  setPeriod(val === '24h' ? val : Number(val));
+  setPeriod(val === '24h' || val === 'all' ? val : Number(val));
   }
   }}
   options={[
@@ -158,6 +158,7 @@ export default function CRMAnalytics() {
   { value: 60, label: "Last 2 Months" },
   { value: 180, label: "Last 6 Months" },
   { value: 365, label: "Last 1 Year" },
+  { value: 'all', label: "All Time" },
   { value: "custom", label: "Custom Range..." }
   ]}
   />
